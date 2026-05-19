@@ -1,6 +1,7 @@
 // app/(auth)/forgot-password/page.tsx
-import type { Metadata } from "next";
-import { AuthCard }          from "@/components/auth/AuthCard";
+import { Suspense }           from "react";
+import type { Metadata }      from "next";
+import { AuthCard }           from "@/components/auth/AuthCard";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 export const metadata: Metadata = {
@@ -15,7 +16,9 @@ export default function ForgotPasswordPage() {
       footerText="تذكرت كلمة المرور؟"
       footerLink={{ href: "/login", label: "تسجيل الدخول" }}
     >
-      <ForgotPasswordForm />
+      <Suspense fallback={null}>
+        <ForgotPasswordForm />
+      </Suspense>
     </AuthCard>
   );
 }
