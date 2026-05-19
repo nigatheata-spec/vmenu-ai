@@ -66,7 +66,7 @@ export default function Sidebar({ open, onClose, onLogout }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-2 px-3.5 py-3 border-b border-[var(--bd)]">
-          <div className="w-7 h-7 rounded-md bg-[var(--ac)] flex items-center justify-center text-black font-black text-xs font-[var(--fe)]">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--ac)] to-[var(--ac2)] flex items-center justify-center text-black font-black text-xs font-[var(--fe)]">
             V
           </div>
           <span className="font-black text-base font-[var(--fd)]">
@@ -87,11 +87,11 @@ export default function Sidebar({ open, onClose, onLogout }: SidebarProps) {
               key={item.route}
               onClick={() => navigate(item.route)}
               className={cn(
-                "w-full flex items-center gap-2 px-3.5 py-2 text-[0.83rem] transition-all duration-200 rounded-md mx-1 w-[calc(100%-8px)]",
-                "text-[var(--c2)] hover:text-[var(--c0)] hover:bg-[var(--b3)]",
+                "w-full flex items-center gap-2 px-3.5 py-2 text-[0.83rem] transition-all duration-200",
+                "border-e-[3px] text-[var(--c2)] hover:text-[var(--c0)] hover:bg-[var(--acs)]",
                 state.route === item.route
-                  ? "text-[var(--ac)] bg-[var(--acs)] font-bold"
-                  : ""
+                  ? "text-[var(--ac)] bg-[var(--acs)] border-e-[var(--ac)] font-bold"
+                  : "border-e-transparent"
               )}
             >
               <span className="w-[18px] text-center text-[0.93rem]">{item.icon}</span>
