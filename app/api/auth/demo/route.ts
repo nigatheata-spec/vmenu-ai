@@ -12,9 +12,8 @@
 // =============================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import { TRIAL_COOKIE_NAME, TRIAL_COOKIE_VALUE } from "@/lib/trial";
 
-export const TRIAL_COOKIE_NAME  = "vmenu_trial";
-export const TRIAL_COOKIE_VALUE = "active";
 // 1-hour trial session
 const TRIAL_MAX_AGE = 60 * 60;
 
