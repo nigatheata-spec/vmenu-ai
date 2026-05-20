@@ -4,270 +4,507 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
+import {
+  QrCode,
+  Camera,
+  FilmSlate,
+  PaintBrush,
+  ChartBar,
+  Robot,
+  Package,
+  ArrowRight,
+  ArrowUpRight,
+  Sun,
+  Moon,
+  Translate,
+  TrendUp,
+  Sparkle,
+  CheckCircle,
+} from "@phosphor-icons/react";
 
-// ── Feature card ──────────────────────────────────────────────
-function FeatureCard({ icon, titleAr, titleEn, descAr, descEn }: {
-  icon: string; titleAr: string; titleEn: string; descAr: string; descEn: string;
-}) {
-  const { t } = useApp();
-  return (
-    <div className="bg-[var(--b2)] border border-[var(--bd)] rounded-[var(--r)] p-5
-                    transition-all duration-300 hover:border-[var(--bda)] hover:-translate-y-0.5">
-      <div className="w-10 h-10 rounded-[9px] bg-[var(--acs)] border border-[var(--bda)]
-                      flex items-center justify-center text-xl mb-2.5">
-        {icon}
-      </div>
-      <h3 className="text-[0.95rem] font-black mb-1">{t(titleAr, titleEn)}</h3>
-      <p className="text-[0.82rem] text-[var(--c2)]">{t(descAr, descEn)}</p>
-    </div>
-  );
-}
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
 
-// ── Step card ─────────────────────────────────────────────────
-function StepCard({ num, icon, titleAr, titleEn, descAr, descEn }: {
-  num: number; icon: string;
-  titleAr: string; titleEn: string;
-  descAr: string; descEn: string;
-}) {
-  const { t } = useApp();
-  return (
-    <div className="relative bg-[var(--b1)] border border-[var(--bd)] rounded-[var(--r)] p-5 pt-7">
-      <div className="absolute -top-4 start-4 w-8 h-8 rounded-full bg-[var(--ac)] text-black
-                      flex items-center justify-center font-black font-[var(--fe)]">
-        {num}
-      </div>
-      <div className="text-[1.8rem] mb-2">{icon}</div>
-      <h3 className="text-[0.95rem] font-black mb-1">{t(titleAr, titleEn)}</h3>
-      <p className="text-[0.8rem] text-[var(--c2)]">{t(descAr, descEn)}</p>
-    </div>
-  );
-}
+const FEATURES = [
+  {
+    icon: QrCode,
+    ar: "منيو + QR",
+    en: "Menu + QR",
+    dAr: "رمز QR لكل طاولة. الزبون يطلب مباشرة.",
+    dEn: "Per-table QR. Guests order instantly.",
+  },
+  {
+    icon: Camera,
+    ar: "صور AI",
+    en: "AI Photos",
+    dAr: "صورة جوال تصبح لقطة احترافية في ثوانٍ.",
+    dEn: "Phone shot becomes a 4K product image in seconds.",
+  },
+  {
+    icon: FilmSlate,
+    ar: "محتوى الفيديو",
+    en: "Video Content",
+    dAr: "ريلز، UGC، إعلانات — كل شيء من مكان واحد.",
+    dEn: "Reels, UGC, promos. All from one place.",
+  },
+  {
+    icon: PaintBrush,
+    ar: "محرر المنيو",
+    en: "Menu Editor",
+    dAr: "خمسة ثيمات، drag & drop، تحكم كامل.",
+    dEn: "Five themes, drag & drop, full control.",
+  },
+  {
+    icon: ChartBar,
+    ar: "تحليلات لحظية",
+    en: "Live Analytics",
+    dAr: "KPIs في الوقت الفعلي وهندسة المنيو.",
+    dEn: "Real-time KPIs and smart menu engineering.",
+  },
+  {
+    icon: Robot,
+    ar: "عروض AI",
+    en: "AI Promos",
+    dAr: "Claude يحلل مبيعاتك ويقترح عروضاً رابحة.",
+    dEn: "Claude reads your sales, suggests winning promos.",
+  },
+  {
+    icon: Package,
+    ar: "إدارة الطلبات",
+    en: "Orders",
+    dAr: "طلبات الطاولات لحظياً مع تنبيه صوتي.",
+    dEn: "Live table orders with audio alerts.",
+  },
+] as const;
 
-// ── App mock preview ──────────────────────────────────────────
-function AppMock() {
+const STEPS = [
+  { num: "01", ar: "سجّل مطعمك", en: "Register", dAr: "30 ثانية فقط", dEn: "30 seconds." },
+  { num: "02", ar: "صمّم المنيو", en: "Design", dAr: "ثيم + صور AI", dEn: "Theme + AI photos." },
+  { num: "03", ar: "ضع QR على الطاولة", en: "Place QR", dAr: "الزبون يمسح ويطلب", dEn: "Guests scan and order." },
+  { num: "04", ar: "انطلق", en: "Launch", dAr: "عروض وتحليلات تلقائية", dEn: "Promos and analytics, automatic." },
+] as const;
+
+// ─────────────────────────────────────────────
+// HERO PANEL — isolated client leaf
+// ─────────────────────────────────────────────
+
+function HeroPanel({ isAr }: { isAr: boolean }) {
+  const bars = [55, 70, 45, 85, 60, 90, 72];
+  const orders = [
+    { id: "#1042", item: isAr ? "سماش برقر" : "Wagyu Smash", price: "59" },
+    { id: "#1041", item: isAr ? "بيتزا ترافل" : "Truffle Pizza", price: "75" },
+    { id: "#1040", item: isAr ? "موهيتو فراولة" : "Strawberry Mojito", price: "22" },
+  ];
+
   return (
-    <div
-      className="w-full bg-[var(--b1)] border border-[var(--bd2)] rounded-[var(--r)] overflow-hidden
-                 shadow-[0_30px_80px_rgba(0,0,0,.4)]"
-      style={{ transform: "perspective(1000px) rotateY(-5deg)" }}
-    >
-      <div className="h-7 bg-[var(--b2)] flex items-center px-2.5 gap-1.5 border-b border-[var(--bd)]">
-        <span className="w-2 h-2 rounded-full bg-[#ff5f57]" />
-        <span className="w-2 h-2 rounded-full bg-[#febc2e]" />
-        <span className="w-2 h-2 rounded-full bg-[#28c840]" />
+    <div className="relative h-[420px] w-full select-none pointer-events-none">
+
+      {/* Main orders card */}
+      <div
+        className="absolute top-0 inset-x-0 bg-[var(--b1)] border border-[var(--bd2)]
+                   rounded-2xl p-5 animate-float"
+        style={{ animationDelay: "0s", boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-[0.68rem] font-semibold text-[var(--c2)] uppercase tracking-widest font-[var(--fe)]">
+              {isAr ? "طلبات اليوم" : "Today's Orders"}
+            </p>
+            <p className="text-3xl font-black text-[var(--c0)] font-[var(--fe)] leading-none mt-0.5">
+              342
+            </p>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--scs)]">
+            <TrendUp size={12} weight="bold" color="var(--sc)" />
+            <span className="text-[0.68rem] font-bold text-[var(--sc)] font-[var(--fe)]">+18%</span>
+          </div>
+        </div>
+
+        {/* Mini bar chart */}
+        <div className="flex items-end gap-1 h-10">
+          {bars.map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-sm"
+              style={{
+                height: `${h}%`,
+                background: i === 6 ? "var(--ac)" : "var(--b3)",
+                transition: "height 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
       </div>
-      <div className="p-4 grid grid-cols-3 gap-2">
-        {["📱", "📸", "🎬", "🎨", "📊", "🤖"].map((e, i) => (
-          <div key={i} className="bg-[var(--b2)] rounded-[9px] p-3 border border-[var(--bd)]">
-            <div className="text-xl mb-1.5">{e}</div>
-            <div className="h-[7px] bg-[var(--b3)] rounded mb-1" />
-            <div className="h-[7px] bg-[var(--b3)] rounded w-3/5" />
+
+      {/* Orders list card */}
+      <div
+        className="absolute top-[168px] inset-x-0 bg-[var(--b1)] border border-[var(--bd)]
+                   rounded-2xl overflow-hidden animate-floatSlow"
+        style={{ animationDelay: "1.2s", boxShadow: "0 16px 40px rgba(0,0,0,0.2)" }}
+      >
+        {orders.map((o, i) => (
+          <div
+            key={o.id}
+            className="flex items-center justify-between px-4 py-2.5"
+            style={{ borderTop: i > 0 ? "1px solid var(--bd)" : "none" }}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--sc)]" />
+              <span className="text-[0.72rem] font-[var(--fe)] text-[var(--c3)]">{o.id}</span>
+              <span className="text-[0.78rem] font-semibold text-[var(--c0)]">{o.item}</span>
+            </div>
+            <span className="text-[0.75rem] font-black font-[var(--fe)] text-[var(--ac)]">
+              {isAr ? `${o.price} ر.س` : `SAR ${o.price}`}
+            </span>
           </div>
         ))}
+
+        {/* AI promo strip */}
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--acs)] border-t border-[var(--bda)]">
+          <Sparkle size={13} weight="fill" color="var(--ac)" />
+          <span className="text-[0.72rem] text-[var(--ac)] font-semibold">
+            {isAr ? 'Claude: "عزّز البيتزا بتخفيض 10% الآن"' : 'Claude: "Boost pizza with 10% off tonight"'}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Main Landing ──────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// MAIN LANDING
+// ─────────────────────────────────────────────
+
 export default function Landing() {
   const { state, dispatch, t } = useApp();
   const router = useRouter();
   const [trialLoading, setTrialLoading] = useState(false);
+  const isAr = state.lang === "ar";
 
   const startTrial = async () => {
     setTrialLoading(true);
     try {
       const res = await fetch("/api/auth/demo", { method: "POST" });
-      if (res.ok) {
-        router.push("/dashboard");
-        router.refresh();
-      }
-    } finally {
-      setTrialLoading(false);
-    }
+      if (res.ok) { router.push("/dashboard"); router.refresh(); }
+    } finally { setTrialLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--b0)]">
-
-      {/* ── Navbar ── */}
-      <nav className="sticky top-0 z-50 flex justify-between items-center px-5 py-3.5
+    <div
+      className="min-h-[100dvh] flex flex-col bg-[var(--b0)]"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      {/* ── Nav ── */}
+      <nav className="sticky top-0 z-50 h-14 flex items-center justify-between px-6
                       bg-[var(--bg)] backdrop-blur-xl border-b border-[var(--bd)]">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-[var(--ac)] to-[var(--ac2)]
-                          flex items-center justify-center text-black font-black text-sm font-[var(--fe)]">
-            V
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-[var(--ac)] flex items-center justify-center">
+            <span className="text-black font-black text-xs font-[var(--fe)]">V</span>
           </div>
-          <span className="font-black text-[1.05rem] font-[var(--fd)]">
+          <span className="font-black text-[0.95rem] font-[var(--fd)] tracking-tight">
             Vmenu<span className="text-[var(--ac)]">.ai</span>
           </span>
         </div>
 
-        {/* Nav actions */}
-        <div className="flex gap-1.5 items-center">
-          {/* Theme toggle */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => dispatch({ type: "SET_THEME", payload: state.theme === "dark" ? "light" : "dark" })}
-            className="w-9 h-9 rounded-lg bg-[var(--b2)] border border-[var(--bd)] flex items-center justify-center
-                       text-sm hover:bg-[var(--acs)] hover:border-[var(--ac)] transition-all"
+            className="w-8 h-8 rounded-lg bg-[var(--b2)] border border-[var(--bd)]
+                       flex items-center justify-center text-[var(--c2)]
+                       hover:border-[var(--bd2)] hover:text-[var(--c0)] transition-colors"
             aria-label="Toggle theme"
           >
-            {state.theme === "dark" ? "🌙" : "☀️"}
+            {state.theme === "dark"
+              ? <Sun size={15} weight="regular" />
+              : <Moon size={15} weight="regular" />}
           </button>
 
-          {/* Language toggle */}
           <button
-            onClick={() => dispatch({ type: "SET_LANG", payload: state.lang === "ar" ? "en" : "ar" })}
-            className="w-9 h-9 rounded-lg bg-[var(--b2)] border border-[var(--bd)] flex items-center justify-center
-                       text-[0.68rem] font-black font-[var(--fe)] hover:bg-[var(--acs)] hover:border-[var(--ac)] transition-all"
+            onClick={() => dispatch({ type: "SET_LANG", payload: isAr ? "en" : "ar" })}
+            className="w-8 h-8 rounded-lg bg-[var(--b2)] border border-[var(--bd)]
+                       flex items-center justify-center text-[var(--c2)]
+                       hover:border-[var(--bd2)] hover:text-[var(--c0)] transition-colors"
             aria-label="Toggle language"
           >
-            {state.lang === "ar" ? "EN" : "عربي"}
+            <Translate size={15} weight="regular" />
           </button>
 
-          {/* Login — link to /login page */}
           <Link
             href="/login"
-            className="px-5 py-2 rounded-full border-[1.5px] border-[var(--bd2)] text-[var(--c1)]
-                       font-semibold text-sm hover:border-[var(--ac)] hover:text-[var(--ac)] transition-all"
+            className="px-4 h-8 rounded-lg border border-[var(--bd2)] text-[var(--c2)]
+                       text-[0.8rem] font-medium flex items-center gap-1.5
+                       hover:border-[var(--ac)] hover:text-[var(--c0)] transition-all"
           >
             {t("دخول", "Login")}
           </Link>
 
-          {/* Start free — link to /signup page */}
           <Link
             href="/signup"
-            className="px-5 py-2 rounded-full bg-gradient-to-br from-[var(--ac)] to-[var(--ac2)]
-                       text-black font-bold text-sm active:scale-95 transition-all"
+            className="px-4 h-8 rounded-lg bg-[var(--ac)] text-black text-[0.8rem] font-bold
+                       flex items-center gap-1.5
+                       hover:opacity-90 active:scale-[0.98] transition-all"
           >
             {t("ابدأ مجاناً", "Start Free")}
+            <ArrowRight size={13} weight="bold" />
           </Link>
         </div>
       </nav>
 
       {/* ── Hero ── */}
-      <section className="flex-1 flex items-center px-5 py-14 relative overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px]
-                        bg-[radial-gradient(circle,var(--acs)_0%,transparent_70%)] pointer-events-none" />
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 w-full">
+      <section className="flex-1 flex items-center min-h-[calc(100dvh-56px)] px-6 py-16 overflow-hidden">
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-16 lg:gap-24 items-center">
 
-          {/* Text */}
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--acs)] border border-[var(--bda)]
-                            rounded-full text-[0.75rem] font-bold text-[var(--ac)] mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ac)] animate-pulse" />
-              {t("مدعوم بالذكاء الاصطناعي", "Powered by AI")}
-            </div>
+          {/* Left: text */}
+          <div className="animate-fadeUp">
+            <p
+              className="text-[0.68rem] font-bold font-[var(--fe)] text-[var(--ac)]
+                         uppercase tracking-[0.18em] mb-6"
+              style={{ animationDelay: "0ms" }}
+            >
+              {t("منصة إدارة المطاعم", "Restaurant Management Platform")}
+            </p>
 
-            <h1 className="text-4xl lg:text-5xl font-black leading-tight mb-4">
-              {t("حوّل مطعمك إلى", "Transform your restaurant to")}
+            <h1
+              className="text-[clamp(2.6rem,5.5vw,5rem)] font-black leading-[1.04]
+                         text-[var(--c0)] mb-6"
+              style={{
+                fontFamily: isAr ? "var(--fa)" : "var(--fd)",
+                letterSpacing: isAr ? "normal" : "-0.04em",
+              }}
+            >
+              {t("مطعمك الرقمي", "Your restaurant,")}
               <br />
-              <span className="bg-gradient-to-r from-[var(--ac)] to-[var(--ac2)] bg-clip-text text-transparent">
-                {t("تجربة رقمية ذكية", "a smart digital experience")}
+              <span className="text-[var(--ac)]">
+                {t("يبدأ هنا.", "starts here.")}
               </span>
             </h1>
 
-            <p className="text-[var(--c1)] leading-relaxed mb-6 text-base">
+            <p
+              className="text-[var(--c2)] text-[1rem] leading-relaxed max-w-[48ch] mb-10"
+              style={{ animationDelay: "80ms" }}
+            >
               {t(
-                "منيو QR، صور AI، فيديوهات، عروض ذكية — كل ما يحتاجه مطعمك",
-                "QR menu, AI photos, videos, smart promos — everything your restaurant needs"
+                "منيو QR، صور AI، عروض ذكية، تحليلات لحظية. سبع أدوات في منصة واحدة.",
+                "QR menus, AI photos, smart promos, live analytics. Seven tools, one platform."
               )}
             </p>
 
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3" style={{ animationDelay: "140ms" }}>
               <Link
                 href="/signup"
-                className="px-7 py-3 rounded-full bg-gradient-to-br from-[var(--ac)] to-[var(--ac2)]
-                           text-black font-bold text-[0.92rem] active:scale-95 transition-all"
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-lg
+                           bg-[var(--ac)] text-black font-bold text-[0.88rem]
+                           hover:opacity-90 active:scale-[0.98] transition-all"
               >
-                {t("ابدأ مجاناً →", "Start Free →")}
+                {t("ابدأ مجاناً", "Start Free")}
+                <ArrowRight size={15} weight="bold" />
               </Link>
               <button
                 onClick={startTrial}
                 disabled={trialLoading}
-                className="px-7 py-3 rounded-full border-[1.5px] border-[var(--bd2)] text-[var(--c1)]
-                           font-semibold text-[0.92rem] hover:border-[var(--ac)] hover:text-[var(--ac)]
-                           transition-all disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-lg
+                           border border-[var(--bd2)] text-[var(--c2)] font-medium text-[0.88rem]
+                           hover:border-[var(--ac)] hover:text-[var(--c0)]
+                           active:scale-[0.98] transition-all disabled:opacity-40"
               >
-                {trialLoading ? "⏳ جاري التحميل…" : t("تجربة مجانية", "Free Trial")}
+                {trialLoading
+                  ? t("جاري…", "Loading…")
+                  : t("جرّب مجاناً", "Free Trial")}
               </button>
+            </div>
+
+            {/* Trust line */}
+            <div className="flex items-center gap-2 mt-8">
+              <CheckCircle size={14} weight="fill" color="var(--sc)" />
+              <span className="text-[0.75rem] text-[var(--c2)]">
+                {t("لا يلزم بطاقة ائتمان · إعداد في 30 ثانية", "No credit card · Setup in 30 seconds")}
+              </span>
             </div>
           </div>
 
-          {/* Mock app */}
-          <div><AppMock /></div>
+          {/* Right: live dashboard panel */}
+          <div className="hidden lg:block animate-slideInRight">
+            <HeroPanel isAr={isAr} />
+          </div>
         </div>
       </section>
 
       {/* ── Features ── */}
-      <section className="px-5 py-12 bg-[var(--b1)] border-t border-[var(--bd)]">
-        <h2 className="text-center text-[1.6rem] font-black mb-8">
-          {t("7 خدمات في منصة واحدة", "7 Services in One Platform")}
-        </h2>
-        <div className="max-w-[1100px] mx-auto grid gap-3.5"
-             style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
-          {[
-            { icon: "📱", ar: "منيو + QR",    en: "Menu + QR",    dAr: "QR لكل طاولة، الزبون يطلب",      dEn: "QR per table, guests order" },
-            { icon: "📸", ar: "صور AI",        en: "AI Photos",    dAr: "صورة جوال → احترافية 4K",         dEn: "Phone photo → 4K pro" },
-            { icon: "🎬", ar: "فيديو",          en: "Video",        dAr: "منيو، ريلز، UGC، عروض",           dEn: "Menu, reels, UGC, promos" },
-            { icon: "🎨", ar: "محرر المنيو",   en: "Menu Editor",  dAr: "5 ثيمات + تخصيص + drag&drop",    dEn: "5 themes + customization" },
-            { icon: "📊", ar: "تحليلات",       en: "Analytics",    dAr: "KPIs لحظية + هندسة المنيو",       dEn: "Real-time KPIs" },
-            { icon: "🤖", ar: "عروض AI",       en: "AI Promos",    dAr: "Claude Sonnet يحلل ويقترح",       dEn: "Claude Sonnet analyzes" },
-          ].map((f) => (
-            <FeatureCard key={f.en} icon={f.icon} titleAr={f.ar} titleEn={f.en} descAr={f.dAr} descEn={f.dEn} />
-          ))}
+      <section className="border-t border-[var(--bd)] bg-[var(--b1)] px-6 py-20">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Heading row */}
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-14 gap-4">
+            <h2
+              className="text-[clamp(1.6rem,3vw,2.4rem)] font-black text-[var(--c0)] leading-tight"
+              style={{ fontFamily: isAr ? "var(--fa)" : "var(--fd)", letterSpacing: isAr ? "normal" : "-0.03em" }}
+            >
+              {t("كل ما يحتاجه مطعمك", "Everything your")}
+              <br />
+              <span className="text-[var(--c2)] font-medium">
+                {t("في مكان واحد.", "restaurant needs.")}
+              </span>
+            </h2>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-1.5 text-[0.82rem] font-semibold
+                         text-[var(--ac)] hover:opacity-70 transition-opacity shrink-0"
+            >
+              {t("ابدأ الآن", "Get started")}
+              <ArrowUpRight size={14} weight="bold" />
+            </Link>
+          </div>
+
+          {/* Asymmetric grid: big first feature + list */}
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6">
+
+            {/* Featured: first item large */}
+            <div className="bg-[var(--b2)] border border-[var(--bd)] rounded-2xl p-8
+                            flex flex-col justify-between min-h-[260px]
+                            hover:border-[var(--bda)] transition-colors group">
+              <div className="w-10 h-10 rounded-xl bg-[var(--acs)] border border-[var(--bda)]
+                              flex items-center justify-center text-[var(--ac)]
+                              group-hover:scale-110 transition-transform">
+                <QrCode size={20} weight="duotone" />
+              </div>
+              <div>
+                <h3
+                  className="text-[1.15rem] font-black text-[var(--c0)] mb-2"
+                  style={{ fontFamily: isAr ? "var(--fa)" : "var(--fd)" }}
+                >
+                  {t("منيو QR لكل طاولة", "QR Menu for Every Table")}
+                </h3>
+                <p className="text-[0.83rem] text-[var(--c2)] leading-relaxed max-w-[36ch]">
+                  {t(
+                    "كل طاولة لها رمز QR خاص. الزبون يمسح ويطلب مباشرة بدون تطبيق ولا موظف.",
+                    "Every table gets its own QR. Guests scan and order instantly, no app, no staff required."
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Remaining 6 as compact rows */}
+            <div className="divide-y divide-[var(--bd)]">
+              {FEATURES.slice(1).map(({ icon: Icon, ar, en, dAr, dEn }) => (
+                <div
+                  key={en}
+                  className="flex items-center gap-4 py-4 group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--b2)] border border-[var(--bd)]
+                                  flex items-center justify-center text-[var(--c2)] shrink-0
+                                  group-hover:border-[var(--bda)] group-hover:text-[var(--ac)]
+                                  transition-all">
+                    <Icon size={16} weight="regular" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[0.85rem] text-[var(--c0)]">{t(ar, en)}</p>
+                    <p className="text-[0.76rem] text-[var(--c2)]">{t(dAr, dEn)}</p>
+                  </div>
+                  <ArrowUpRight
+                    size={13}
+                    weight="bold"
+                    className="text-[var(--c3)] opacity-0 group-hover:opacity-100 shrink-0 transition-opacity"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── How it works ── */}
-      <section className="px-5 py-12 bg-[var(--b0)]">
-        <h2 className="text-center text-[1.6rem] font-black mb-2">
-          {t("كيف تعمل المنصة؟", "How It Works")}
-        </h2>
-        <p className="text-center text-sm text-[var(--c2)] mb-9">
-          {t("4 خطوات بسيطة من التسجيل إلى أول طلب", "4 simple steps from signup to first order")}
-        </p>
-        <div className="max-w-[1000px] mx-auto grid gap-6 mt-6"
-             style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-          {[
-            { num: 1, icon: "✍️", ar: "سجّل مطعمك",      en: "Register",    dAr: "اسم المطعم، المدينة — 30 ثانية",    dEn: "Restaurant name, city — 30s" },
-            { num: 2, icon: "🎨", ar: "صمّم المنيو",       en: "Design Menu", dAr: "5 ثيمات + drag & drop + صور AI",   dEn: "5 themes + drag & drop + AI" },
-            { num: 3, icon: "📱", ar: "ضع QR على الطاولة", en: "Place QR",    dAr: "الزبون يمسح ويطلب مباشرة",         dEn: "Guests scan & order instantly" },
-            { num: 4, icon: "🚀", ar: "انطلق!",            en: "Launch!",     dAr: "الطلبات تصل + Claude يقترح عروضاً", dEn: "Orders flow + Claude suggests promos" },
-          ].map((s) => (
-            <StepCard key={s.num} {...s} titleAr={s.ar} titleEn={s.en} descAr={s.dAr} descEn={s.dEn} />
-          ))}
+      <section className="border-t border-[var(--bd)] px-6 py-20 bg-[var(--b0)]">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-[0.68rem] font-bold font-[var(--fe)] text-[var(--ac)]
+                        uppercase tracking-[0.18em] mb-3">
+            {t("البداية سهلة", "Simple by design")}
+          </p>
+          <h2
+            className="text-[clamp(1.5rem,2.8vw,2.2rem)] font-black text-[var(--c0)] mb-16"
+            style={{ fontFamily: isAr ? "var(--fa)" : "var(--fd)", letterSpacing: isAr ? "normal" : "-0.03em" }}
+          >
+            {t("من التسجيل إلى أول طلب في دقائق.", "From signup to first order in minutes.")}
+          </h2>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 relative">
+            {STEPS.map((s, i) => (
+              <div key={s.num} className="relative">
+                {/* Connector line */}
+                {i < STEPS.length - 1 && (
+                  <div
+                    className="hidden lg:block absolute top-5 h-px bg-[var(--bd2)]"
+                    style={{ insetInlineStart: "calc(50% + 22px)", insetInlineEnd: 0 }}
+                  />
+                )}
+                <div className="flex flex-col lg:items-center lg:text-center lg:px-4">
+                  <div
+                    className="w-10 h-10 rounded-full border border-[var(--bd2)] bg-[var(--b1)]
+                                flex items-center justify-center mb-4 relative z-10"
+                  >
+                    <span className="text-[0.75rem] font-black font-[var(--fe)] text-[var(--ac)]">
+                      {s.num}
+                    </span>
+                  </div>
+                  <p className="font-bold text-[0.88rem] text-[var(--c0)] mb-1">{t(s.ar, s.en)}</p>
+                  <p className="text-[0.75rem] text-[var(--c2)]">{t(s.dAr, s.dEn)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ── CTA bottom ── */}
-      <section className="px-5 py-16 bg-[var(--b1)] border-t border-[var(--bd)] text-center">
-        <h2 className="text-2xl font-black mb-3">
-          {t("جاهز لبدء رحلتك الرقمية؟", "Ready to go digital?")}
-        </h2>
-        <p className="text-sm text-[var(--c2)] mb-6">
-          {t("انضم لمئات المطاعم التي تستخدم Vmenu.ai", "Join hundreds of restaurants using Vmenu.ai")}
-        </p>
-        <Link
-          href="/signup"
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-bold text-base text-black
-                     bg-gradient-to-br from-[var(--ac)] to-[var(--ac2)] active:scale-95 transition-all"
-          style={{ boxShadow: "0 4px 24px rgba(255,180,50,.35)" }}
-        >
-          {t("ابدأ مجاناً الآن ←", "Start Free Now →")}
-        </Link>
+      {/* ── CTA ── */}
+      <section className="border-t border-[var(--bd)] px-6 py-24 bg-[var(--b1)]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-center">
+          <div>
+            <h2
+              className="text-[clamp(1.8rem,3.5vw,3rem)] font-black text-[var(--c0)] leading-tight mb-3"
+              style={{ fontFamily: isAr ? "var(--fa)" : "var(--fd)", letterSpacing: isAr ? "normal" : "-0.04em" }}
+            >
+              {t("جاهز لتحويل مطعمك؟", "Ready to go digital?")}
+            </h2>
+            <p className="text-[0.88rem] text-[var(--c2)] max-w-[44ch]">
+              {t(
+                "انضم لمئات المطاعم التي تدير عملياتها مع Vmenu.ai.",
+                "Join hundreds of restaurants already running on Vmenu.ai."
+              )}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg
+                         bg-[var(--ac)] text-black font-bold text-[0.88rem]
+                         hover:opacity-90 active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              {t("ابدأ مجاناً الآن", "Start Free Now")}
+              <ArrowRight size={15} weight="bold" />
+            </Link>
+            <button
+              onClick={startTrial}
+              disabled={trialLoading}
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg
+                         border border-[var(--bd2)] text-[var(--c2)] font-medium text-[0.88rem]
+                         hover:border-[var(--ac)] hover:text-[var(--c0)]
+                         active:scale-[0.98] transition-all disabled:opacity-40 whitespace-nowrap"
+            >
+              {t("جرّب الديمو", "Try Demo")}
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="px-5 py-4 border-t border-[var(--bd)] flex flex-wrap justify-between items-center gap-2">
-        <span className="text-[0.78rem] text-[var(--c3)]">
-          © 2024 Vmenu.ai — {t("جميع الحقوق محفوظة", "All rights reserved")}
+      <footer className="border-t border-[var(--bd)] px-6 py-5
+                         flex flex-wrap justify-between items-center gap-3">
+        <span className="text-[0.72rem] text-[var(--c3)] font-[var(--fe)]">
+          © 2025 Vmenu.ai
         </span>
-        <div className="flex gap-4 text-[0.78rem] text-[var(--c2)]">
-          <Link href="/login"  className="hover:text-[var(--ac)] transition-colors">{t("دخول", "Login")}</Link>
-          <Link href="/signup" className="hover:text-[var(--ac)] transition-colors">{t("تسجيل", "Sign Up")}</Link>
+        <div className="flex gap-5 text-[0.72rem] text-[var(--c2)]">
+          <Link href="/login"  className="hover:text-[var(--c0)] transition-colors">{t("دخول", "Login")}</Link>
+          <Link href="/signup" className="hover:text-[var(--c0)] transition-colors">{t("تسجيل", "Sign Up")}</Link>
         </div>
       </footer>
     </div>
