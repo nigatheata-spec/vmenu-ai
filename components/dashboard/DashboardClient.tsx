@@ -6,6 +6,7 @@ import AppShell               from "@/components/layout/AppShell";
 import { AuthSync }           from "@/hooks/useAuthSync";
 import type { AuthSession }   from "@/types/supabase";
 import type { AuthUser }      from "@/types";
+import { Flask, X }           from "@phosphor-icons/react";
 
 interface DashboardClientProps {
   session: AuthSession;
@@ -35,15 +36,15 @@ function TrialBanner() {
     <div className="fixed top-0 start-0 end-0 z-[999] flex items-center justify-between gap-3 px-4 py-2 text-sm font-semibold"
       style={{ background: "linear-gradient(135deg, var(--ac), var(--ac2))", color: "#000" }}>
       <div className="flex items-center gap-2">
-        <span>🧪</span>
+        <Flask size={14} weight="duotone" />
         <span>أنت تستخدم النسخة التجريبية — البيانات وهمية ولن تُحفظ</span>
       </div>
       <div className="flex items-center gap-2">
         <a href="/signup" className="px-3 py-1 rounded-full text-xs font-bold bg-black text-[var(--ac)] hover:opacity-80">
           إنشاء حساب مجاني
         </a>
-        <button onClick={endTrial} className="px-3 py-1 rounded-full text-xs font-bold border border-black/30 hover:bg-black/10">
-          ✕ إنهاء التجربة
+        <button onClick={endTrial} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border border-black/30 hover:bg-black/10">
+          <X size={10} weight="bold" /> إنهاء التجربة
         </button>
       </div>
     </div>

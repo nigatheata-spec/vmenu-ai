@@ -17,6 +17,7 @@
 // =============================================================
 
 import { NextRequest, NextResponse }               from "next/server";
+import { cookies }                                 from "next/headers";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
 import { createSupabaseServerClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
@@ -24,6 +25,7 @@ import { buildTableMenuUrl,
          generateQRDataUrl,
          generateQRSvgString,
          uploadQRToStorage }                       from "@/lib/qr";
+import { TRIAL_COOKIE_NAME, TRIAL_COOKIE_VALUE }  from "@/lib/trial";
 
 const NO_CACHE = { "Cache-Control": "no-store" };
 type Params    = { params: Promise<{ id: string }> };
@@ -33,6 +35,21 @@ export async function POST(
   { params }: Params,
 ): Promise<NextResponse> {
   const { id } = await params;
+
+  // ── Trial mode: generate QR without Supabase auth ──────────
+  const cookieStore = await cookies();
+  const isTrial = cookieStore.get(TRIAL_COOKIE_NAME)?.value === TRIAL_COOKIE_VALUE;
+  if (isTrial) {
+    const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? "https://vmenu.ai";
+    const menuUrl   = `${appUrl}/menu/demo/${id}`;
+    const dataUrl   = await generateQRDataUrl(menuUrl);
+    return NextResponse.json(
+      { data: { table_id: id, menu_url: menuUrl, qr_url: null, qr_data_url: dataUrl },
+        timestamp: new Date().toISOString() },
+      { status: 200, headers: NO_CACHE },
+    );
+  }
+
   const ctx = await getUserContext();
   if (!ctx)                   return unauthorized();
   if (!ctx.can("tables:manage")) return forbidden();

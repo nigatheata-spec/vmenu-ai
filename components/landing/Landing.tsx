@@ -29,12 +29,12 @@ import {
 // ─────────────────────────────────────────────
 
 const MENU_PHOTOS = [
-  { seed: "wagyu-smash-burger",  ar: "سماش برقر واجيو",  en: "Wagyu Smash",       price: "59",  cat: "برقر" },
-  { seed: "truffle-pizza-2024",  ar: "بيتزا ترافل أسود", en: "Truffle Pizza",     price: "75",  cat: "بيتزا" },
-  { seed: "basque-cheesecake",   ar: "تشيز كيك باسك",    en: "Basque Cheesecake", price: "35",  cat: "حلويات" },
-  { seed: "grilled-chicken-herb",ar: "دجاج مشوي بالأعشاب",en: "Herb Chicken",     price: "65",  cat: "دجاج" },
-  { seed: "strawberry-mojito",   ar: "موهيتو فراولة",    en: "Strawberry Mojito", price: "22",  cat: "مشروبات" },
-  { seed: "truffle-fries-golden",ar: "بطاطس ترافل",      en: "Truffle Fries",     price: "25",  cat: "إضافات" },
+  { ar: "سماش برقر واجيو",   en: "Wagyu Smash",       price: "59",  cat: "برقر"    },
+  { ar: "برقر بالجبن المزدوج",en: "Double Cheese",     price: "69",  cat: "برقر"    },
+  { ar: "برقر كلاسيك",        en: "Classic Burger",    price: "49",  cat: "برقر"    },
+  { ar: "برقر مشروم",         en: "Mushroom Burger",   price: "65",  cat: "برقر"    },
+  { ar: "برقر BBQ",           en: "BBQ Burger",        price: "72",  cat: "برقر"    },
+  { ar: "برقر مع بطاطس",      en: "Burger + Fries",    price: "79",  cat: "وجبات"   },
 ] as const;
 
 const FEATURES = [
@@ -131,9 +131,9 @@ function HeroPanel({ isAr }: { isAr: boolean }) {
 // ─────────────────────────────────────────────
 
 function MenuPhotoCard({
-  seed, nameAr, nameEn, price, cat, isAr, index,
+  nameAr, nameEn, price, cat, isAr, index,
 }: {
-  seed: string; nameAr: string; nameEn: string;
+  nameAr: string; nameEn: string;
   price: string; cat: string; isAr: boolean; index: number;
 }) {
   return (
@@ -145,12 +145,11 @@ function MenuPhotoCard({
       {/* Photo */}
       <div className="relative h-64 overflow-hidden bg-[var(--b2)]">
         <Image
-          src={`https://picsum.photos/seed/${seed}/400/500`}
+          src="/burger.jpg"
           alt={isAr ? nameAr : nameEn}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-700"
-          style={{ filter: "brightness(1.08) saturate(1.3) contrast(1.05)" }}
-          unoptimized
+          style={{ filter: "brightness(1.05) saturate(1.2) contrast(1.08)" }}
         />
         {/* AI badge */}
         <div className="absolute top-3 end-3 flex items-center gap-1 px-2 py-0.5
@@ -261,13 +260,12 @@ export default function Landing() {
         {/* Background photo with dark overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://picsum.photos/seed/restaurant-ambiance/1600/900"
+            src="/burger.jpg"
             alt=""
             fill
-            className="object-cover opacity-20"
-            style={{ filter: "saturate(0.4) brightness(0.5)" }}
+            className="object-cover opacity-25"
+            style={{ filter: "saturate(0.5) brightness(0.4)" }}
             priority
-            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--b0)] via-[var(--b0)]/80 to-[var(--b0)]" />
           {/* Radial glow */}
@@ -379,9 +377,8 @@ export default function Landing() {
                style={{ width: "calc((100vw - min(100vw, 1280px)) / 2)" }} />
 
           {MENU_PHOTOS.map((p, i) => (
-            <div key={p.seed} style={{ scrollSnapAlign: "start" }}>
+            <div key={p.en} style={{ scrollSnapAlign: "start" }}>
               <MenuPhotoCard
-                seed={p.seed}
                 nameAr={p.ar}
                 nameEn={p.en}
                 price={p.price}
@@ -441,13 +438,8 @@ export default function Landing() {
             <div className="bg-[var(--b1)] border border-[var(--bd)] rounded-2xl p-8
                             flex flex-col justify-between min-h-[260px]
                             hover:border-[var(--bda)] transition-colors group relative overflow-hidden">
-              {/* Subtle bg photo */}
-              <div className="absolute inset-0 opacity-5">
-                <Image
-                  src="https://picsum.photos/seed/qr-menu-bg/600/400"
-                  alt="" fill className="object-cover" unoptimized
-                />
-              </div>
+              {/* Subtle bg tint */}
+              <div className="absolute inset-0 opacity-[0.03] bg-[var(--ac)] rounded-2xl" />
               <div className="relative">
                 <div className="w-10 h-10 rounded-xl bg-[var(--acs)] border border-[var(--bda)]
                                 flex items-center justify-center text-[var(--ac)]

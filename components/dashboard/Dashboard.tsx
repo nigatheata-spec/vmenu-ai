@@ -7,21 +7,38 @@ import { useOrdersData }     from "@/hooks/useOrdersData";
 import { useRole }           from "@/hooks/useRole";
 import { Card, CardHeader, CardBody } from "@/components/shared/ui";
 import { fmtTime, fmtNumber }         from "@/lib/utils";
+import {
+  ShoppingBag, CurrencyDollar, Receipt, ArrowsClockwise,
+  Pulse, ChartLineUp, Circle, Trophy, Chair,
+  ArrowClockwise, WarningCircle, ForkKnife,
+  type Icon as PhosphorIconType,
+} from "@phosphor-icons/react";
 
 // ── KPI Card ─────────────────────────────────────────────────
-function KpiCard({ icon, label, value, unit, sub, live }: {
-  icon: string; label: string; value: React.ReactNode;
-  unit?: string; sub?: string; live?: boolean;
+function KpiCard({ icon: Icon, label, value, unit, sub, live, accent }: {
+  icon: PhosphorIconType; label: string; value: React.ReactNode;
+  unit?: string; sub?: string; live?: boolean; accent?: string;
 }) {
   return (
-    <Card hover className="p-3.5">
-      <div className="text-xl mb-1">{icon}</div>
-      <div className="text-[0.68rem] text-[var(--c2)] mb-0.5">{label}</div>
-      <div className="font-[var(--fe)] text-2xl font-black leading-tight">
+    <Card hover className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: "var(--acs)", border: "1px solid var(--bda)" }}>
+          <Icon size={15} weight="duotone" color={accent ?? "var(--ac)"} />
+        </div>
+        {live && (
+          <span className="flex items-center gap-1 text-[0.6rem] font-semibold font-[var(--fe)] text-[var(--sc)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--sc)] animate-pulse" />
+            Live
+          </span>
+        )}
+      </div>
+      <div className="text-[0.68rem] text-[var(--c2)] mb-0.5 font-medium">{label}</div>
+      <div className="font-[var(--fe)] text-[1.6rem] font-black leading-tight text-[var(--c0)]">
         {value}
         {unit && <span className="text-[0.62rem] text-[var(--c2)] font-normal ms-1">{unit}</span>}
       </div>
-      {sub && <div className="text-[0.62rem] text-[var(--c3)] mt-0.5">{live && <span className="text-[var(--sc)] me-1">●</span>}{sub}</div>}
+      {sub && !live && <div className="text-[0.6rem] text-[var(--c3)] mt-0.5">{sub}</div>}
     </Card>
   );
 }
@@ -55,13 +72,18 @@ function TopDishesAPI({ items }: { items: { menu_item_id:string; name_ar:string;
   const { t } = useApp();
   if (!items.length) return <div className="text-center py-8 text-[var(--c3)]">{t("لا بيانات","No data")}</div>;
   const maxRev = Math.max(...items.map(x => x.revenue), 1);
-  const medals = ["🥇","🥈","🥉"];
+  const medalColors = ["var(--ac)", "var(--c1)", "#cd7f32"];
   return (
     <div className="flex flex-col gap-1.5">
       {items.map((x, i) => (
         <div key={x.menu_item_id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-[var(--rs)] bg-[var(--b2)] border border-[var(--bd)]">
-          <span className="w-6 text-[0.85rem] font-black text-center">{medals[i] ?? `${i + 1}`}</span>
-          <span className="text-xl">{x.emoji || "🍽️"}</span>
+          <span className="w-5 text-[0.72rem] font-black text-center font-[var(--fe)]"
+            style={{ color: medalColors[i] ?? "var(--c3)" }}>
+            {i + 1}
+          </span>
+          <div className="w-6 h-6 rounded-md bg-[var(--b3)] flex items-center justify-center shrink-0">
+            <ForkKnife size={12} weight="regular" color="var(--c2)" />
+          </div>
           <div className="flex-1 min-w-0">
             <div className="text-[0.8rem] font-bold">{t(x.name_ar, x.name_en)}</div>
             <div className="text-[0.65rem] text-[var(--c2)] font-[var(--fe)]">{x.qty_sold} {t("طلب","orders")}</div>
@@ -82,12 +104,12 @@ function TopDishesAPI({ items }: { items: { menu_item_id:string; name_ar:string;
 //   items in small font
 //   status indicator (🟢 ready/delivered, 🟡 new/prep, ⚪ cancelled/served)
 //   total price · time
-const ORDER_STATUS_DOT: Record<string, { icon: string; color: string; labelAr: string; labelEn: string }> = {
-  new:       { icon: "🟡", color: "var(--wr)", labelAr: "جديد",     labelEn: "Received"  },
-  prep:      { icon: "🟡", color: "var(--wr)", labelAr: "تحضير",    labelEn: "Preparing" },
-  ready:     { icon: "🟢", color: "var(--sc)", labelAr: "جاهز",     labelEn: "Ready"     },
-  served:    { icon: "🟢", color: "var(--sc)", labelAr: "تسليم",    labelEn: "Delivered" },
-  cancelled: { icon: "⚪", color: "var(--c3)", labelAr: "ملغي",     labelEn: "Cancelled" },
+const ORDER_STATUS_DOT: Record<string, { color: string; labelAr: string; labelEn: string }> = {
+  new:       { color: "var(--wr)", labelAr: "جديد",  labelEn: "Received"  },
+  prep:      { color: "var(--wr)", labelAr: "تحضير", labelEn: "Preparing" },
+  ready:     { color: "var(--sc)", labelAr: "جاهز",  labelEn: "Ready"     },
+  served:    { color: "var(--sc)", labelAr: "تسليم", labelEn: "Delivered" },
+  cancelled: { color: "var(--c3)", labelAr: "ملغي",  labelEn: "Cancelled" },
 };
 
 function LiveOrdersFeed() {
@@ -132,9 +154,11 @@ function LiveOrdersFeed() {
             {/* Row 1: status dot · table · order ID · time · total */}
             <div className="flex items-center gap-1.5 mb-1">
               {/* Status dot */}
-              <span className="text-[0.7rem] flex-shrink-0" title={t(meta.labelAr, meta.labelEn)}>
-                {meta.icon}
-              </span>
+              <span
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: meta.color }}
+                title={t(meta.labelAr, meta.labelEn)}
+              />
               {/* Table info */}
               <span className="font-bold text-[0.75rem] font-[var(--fe)] flex-shrink-0">
                 {order.table_number
@@ -292,7 +316,8 @@ export default function Dashboard({ onTableClick }: DashboardProps) {
           {apiError && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
               style={{ background:"var(--wrs)", border:"1px solid var(--wr)", color:"var(--wr)" }}>
-              ⚠️ {t("خطأ في تحميل البيانات","Error loading data")}
+              <WarningCircle size={12} weight="fill" />
+              {t("خطأ في تحميل البيانات","Error loading data")}
               <button onClick={refetch} className="underline ms-1">{t("إعادة المحاولة","Retry")}</button>
             </div>
           )}
@@ -303,35 +328,38 @@ export default function Dashboard({ onTableClick }: DashboardProps) {
           )}
         </div>
         <button onClick={refetch} disabled={apiLoading}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-sm border border-[var(--bd)] hover:border-[var(--ac)] transition-all disabled:opacity-50">
+          className="w-7 h-7 rounded-full flex items-center justify-center border border-[var(--bd)] text-[var(--c2)] hover:border-[var(--ac)] hover:text-[var(--ac)] transition-all disabled:opacity-50">
           {apiLoading
             ? <span className="w-3 h-3 rounded-full border border-[var(--ac)] border-t-transparent animate-spin" />
-            : "⟳"}
+            : <ArrowClockwise size={13} weight="regular" />}
         </button>
       </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5">
-        <KpiCard icon="📦" label={t("الطلبات اليوم","Orders Today")}
+        <KpiCard icon={ShoppingBag} label={t("الطلبات اليوم","Orders Today")}
           value={ordersToday}
           sub={`${t("الكل","All")}: ${apiData?.total.orders_count ?? "—"}`} />
-        <KpiCard icon="💰" label={t("الإيرادات اليوم","Revenue Today")}
+        <KpiCard icon={CurrencyDollar} label={t("الإيرادات اليوم","Revenue Today")}
           value={fmtNumber(revenue)} unit="SAR"
           sub={`${t("الكل","All")}: ${fmtNumber(apiData?.total.revenue ?? 0)}`} />
-        <KpiCard icon="🧾" label={t("متوسط الفاتورة","Avg Ticket")}
+        <KpiCard icon={Receipt} label={t("متوسط الفاتورة","Avg Ticket")}
           value={avgTicket} unit="SAR" />
-        <KpiCard icon="🔄" label={t("دوران الطاولات","Turnover")}
+        <KpiCard icon={ArrowsClockwise} label={t("دوران الطاولات","Turnover")}
           value={typeof turnover === "number" && !isNaN(turnover) ? turnover.toFixed(1) : turnover} unit="x" />
-        <KpiCard icon="🔴" label={t("طلبات نشطة","Active")}
+        <KpiCard icon={Pulse} label={t("طلبات نشطة","Active")}
           value={<span className="text-[var(--sc)]">{activeCount}</span>}
-          sub="Live" live />
+          live accent="var(--sc)" />
       </div>
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3">
         <Card>
           <CardHeader>
-            <span className="text-sm font-bold">📈 {t("الإيرادات بالساعة","Hourly Revenue")}</span>
+            <span className="text-sm font-bold flex items-center gap-1.5">
+              <ChartLineUp size={14} weight="duotone" color="var(--ac)" />
+              {t("الإيرادات بالساعة","Hourly Revenue")}
+            </span>
           </CardHeader>
           <CardBody>
             <HourlyChartRaw hourly={hourlyRevenue} />
@@ -342,8 +370,8 @@ export default function Dashboard({ onTableClick }: DashboardProps) {
         <Card>
           <CardHeader>
             <span className="text-sm font-bold flex items-center gap-1.5">
-              🔴 {t("الطلبات الحية","Live Orders")}
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--sc)] animate-pulse" />
+              <Circle size={8} weight="fill" color="var(--sc)" className="animate-pulse" />
+              {t("الطلبات الحية","Live Orders")}
             </span>
           </CardHeader>
           <CardBody className="p-2">
@@ -355,7 +383,10 @@ export default function Dashboard({ onTableClick }: DashboardProps) {
       {/* Top Dishes */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-bold">🏆 {t("الأطباق الأكثر طلباً","Top Dishes")}</span>
+          <span className="text-sm font-bold flex items-center gap-1.5">
+            <Trophy size={14} weight="duotone" color="var(--ac)" />
+            {t("الأطباق الأكثر طلباً","Top Dishes")}
+          </span>
         </CardHeader>
         <CardBody>
           {apiData?.top_items.length
@@ -368,8 +399,9 @@ export default function Dashboard({ onTableClick }: DashboardProps) {
       {/* Tables */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-bold flex items-center gap-2">
-            🪑 {t("الطاولات","Tables")}
+          <span className="text-sm font-bold flex items-center gap-1.5">
+            <Chair size={14} weight="duotone" color="var(--ac)" />
+            {t("الطاولات","Tables")}
           </span>
           <div className="flex gap-3 text-[0.68rem] text-[var(--c2)]">
             <span className="flex items-center gap-1">
