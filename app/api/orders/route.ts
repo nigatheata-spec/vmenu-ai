@@ -20,6 +20,7 @@ import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
 import { createSupabaseServerClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
+import { isTrial, TRIAL_ORDERS }                  from "@/lib/trial-data";
 
 const NO_CACHE = { "Cache-Control": "no-store" };
 
@@ -87,6 +88,9 @@ function fail(code: string, message: string, status: number) {
 // GET /api/orders
 // ─────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  if (await isTrial()) {
+    return NextResponse.json({ data: TRIAL_ORDERS, timestamp: new Date().toISOString() }, { status: 200, headers: NO_CACHE });
+  }
   const ctx = await getUserContext();
   if (!ctx)                  return unauthorized();
   if (!ctx.can("orders:read")) return forbidden();

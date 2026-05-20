@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { CategoryDTO } from "@/types/api";
+import { isTrial, TRIAL_CATEGORIES } from "@/lib/trial-data";
 
 const NO_CACHE  = { "Cache-Control": "no-store" };
 const CACHE_30S = { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" };
@@ -27,6 +28,9 @@ function fail(code: string, message: string, message_ar: string, status: number)
 // GET /api/menu/categories
 // ─────────────────────────────────────────────────────────────
 export async function GET(_req: NextRequest): Promise<NextResponse> {
+  if (await isTrial()) {
+    return ok(TRIAL_CATEGORIES as CategoryDTO[]);
+  }
   const ctx = await getUserContext();
   if (!ctx)               return unauthorized();
   if (!ctx.can("menu:read")) return forbidden("menu:read permission required");

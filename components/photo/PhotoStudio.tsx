@@ -180,13 +180,41 @@ function NewEnhancement() {
     if (!photos.length) { toast(t("ارفع صورة أولاً", "Upload a photo first"), "e"); return; }
     setLoading(true);
     setResult(null);
-    toast(t("⏳ Gemini AI يعمل (محاكاة)…", "⏳ Gemini AI processing (simulation)…"), "i");
+    toast(t("⏳ AI يحسّن الصورة…", "⏳ AI enhancing your photo…"), "i");
     try {
+      // Extract base64 from data URL (strip "data:image/jpeg;base64," prefix)
+      const rawBase64 = photos[0].split(",")[1] ?? photos[0];
+
+      const res = await fetch("/api/ai/enhance", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ image_base64: rawBase64, style_preset: style, aspect_ratio: "1:1" }),
+      });
+
+      const data = await res.json() as { status?: string; image_url?: string; rejected?: boolean; feedback_en?: string; feedback_ar?: string; error?: string };
+
+      if (!res.ok || data.error) {
+        // menuai-v3 not running → fall back to CSS filter simulation
+        const out = await applyFilterToImage(photos[0], CSS_FILTERS[style]);
+        setResult(out);
+        toast(t("✓ معاينة محلية (شغّل menuai-v3 للإنتاج الفعلي)", "✓ Local preview (run menuai-v3 for real AI output)"), "s");
+        return;
+      }
+
+      if (data.rejected) {
+        toast(data.feedback_ar ?? data.feedback_en ?? t("الصورة لا تصلح للتحسين", "Image rejected by quality gate"), "e");
+        return;
+      }
+
+      if (data.image_url) {
+        setResult(data.image_url);
+        toast(t("✓ جاهز — صورة 4K من FLUX AI", "✓ Done — 4K image from FLUX AI"), "s");
+      }
+    } catch {
+      // Network error (menuai-v3 offline) → CSS fallback
       const out = await applyFilterToImage(photos[0], CSS_FILTERS[style]);
       setResult(out);
-      toast(t("✓ محاكاة جاهزة — اربط Gemini API للإنتاج الفعلي", "✓ Simulation ready — connect Gemini for real output"), "s");
-    } catch {
-      toast(t("⚠️ خطأ في المعالجة", "⚠️ Processing error"), "e");
+      toast(t("✓ معاينة محلية (menuai-v3 غير متصل)", "✓ Local preview (menuai-v3 offline)"), "s");
     } finally {
       setLoading(false);
     }

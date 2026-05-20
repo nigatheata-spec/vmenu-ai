@@ -12,8 +12,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized } from "@/lib/getUserContext";
 import { createSupabaseAdminClient }   from "@/lib/supabase/server";
+import { isTrial, TRIAL_TABLES }       from "@/lib/trial-data";
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
+  if (await isTrial()) {
+    return NextResponse.json(
+      { data: TRIAL_TABLES.map(t => ({ id: t.id, table_number: t.table_number, name: t.name })) },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   const ctx = await getUserContext();
   if (!ctx) return unauthorized();
 

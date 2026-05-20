@@ -9,6 +9,7 @@ import { getUserContext, unauthorized, forbidden }  from "@/lib/getUserContext";
 import { createSupabaseServerClient,
          createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { MenuItemDTO }                         from "@/types/api";
+import { isTrial, TRIAL_ITEMS }                    from "@/lib/trial-data";
 
 const NO_CACHE  = { "Cache-Control": "no-store" };
 const CACHE_30S = { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" };
@@ -53,6 +54,9 @@ function rowToDTO(row: Record<string, unknown>): MenuItemDTO {
 // GET /api/menu/items
 // ─────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  if (await isTrial()) {
+    return ok(TRIAL_ITEMS as MenuItemDTO[]);
+  }
   const ctx = await getUserContext();
   if (!ctx)               return unauthorized();
   if (!ctx.can("menu:read")) return forbidden("menu:read permission required");

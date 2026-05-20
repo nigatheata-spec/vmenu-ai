@@ -15,6 +15,7 @@ import { createSupabaseServerClient,
 import { buildTableMenuUrl,
          generateQRDataUrl,
          uploadQRToStorage }                       from "@/lib/qr";
+import { isTrial, TRIAL_TABLES }                  from "@/lib/trial-data";
 
 const NO_CACHE = { "Cache-Control": "no-store" };
 
@@ -53,6 +54,9 @@ function fail(code: string, message: string, status: number) {
 // GET /api/tables
 // ─────────────────────────────────────────────────────────────
 export async function GET(_req: NextRequest): Promise<NextResponse> {
+  if (await isTrial()) {
+    return NextResponse.json({ data: TRIAL_TABLES, timestamp: new Date().toISOString() }, { status: 200, headers: NO_CACHE });
+  }
   const ctx = await getUserContext();
   if (!ctx) return unauthorized();
   // Allow any role that can read tables OR place orders (needs table list for order form)

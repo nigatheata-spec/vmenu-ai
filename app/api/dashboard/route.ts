@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
 import { createSupabaseServerClient }              from "@/lib/supabase/server";
+import { isTrial, trialDashboard }                from "@/lib/trial-data";
 
 interface TopItem    { menu_item_id:string; name_ar:string; name_en:string; emoji:string; qty_sold:number; revenue:number; }
 interface StatusCount { status:string; count:number; }
@@ -29,6 +30,11 @@ function fail(code: string, message: string, status: number) {
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ── Trial mode: return mock data without Supabase auth ───────
+  if (await isTrial()) {
+    return ok(trialDashboard() as DashboardData);
+  }
+
   const ctx = await getUserContext();
   if (!ctx)                      return unauthorized();
   if (!ctx.can("dashboard:read")) return forbidden("dashboard:read permission required");
