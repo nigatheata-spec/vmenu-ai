@@ -10,7 +10,7 @@
 //   3. Returns a typed result (never throws — callers check .error)
 // =============================================================
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import type { AuthSession, StaffRole } from "@/types/supabase";
 
@@ -43,34 +43,65 @@ export async function serverSignIn(
 }
 
 // ── Sign up ───────────────────────────────────────────────────
+export interface SignUpOptions {
+  city?:        string;
+  phone?:       string;
+  redirectTo?:  string; // full URL for email confirmation link
+}
+
+export interface SignUpResult extends AuthResult {
+  /** true when email confirmation is required (no session yet) */
+  needsEmailConfirmation?: boolean;
+}
+
 export async function serverSignUp(
   email:     string,
   password:  string,
   fullName:  string,
   venueName: string,
-): Promise<AuthResult> {
+  opts:      SignUpOptions = {},
+): Promise<SignUpResult> {
   const supabase = await createSupabaseServerClient();
 
-  // 1. Create the auth user
+  // 1. Create the auth user — store venue metadata so /auth/callback
+  //    can create the venue after email confirmation without needing
+  //    another form step.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName }, // stored in auth.users.raw_user_meta_data
+      data: {
+        full_name:   fullName,
+        venue_name:  venueName,
+        venue_slug:  slugify(venueName),
+        venue_city:  opts.city  ?? "",
+        venue_phone: opts.phone ?? "",
+      },
+      emailRedirectTo: opts.redirectTo,
     },
   });
 
-  if (error || !data.user) {
-    return {
-      session: null,
-      error: error?.message ?? "Registration failed",
-    };
+  if (error) {
+    return { session: null, error: error.message };
   }
 
-  const userId = data.user.id;
+  if (!data.user) {
+    return { session: null, error: "Registration failed" };
+  }
 
-  // 2. Create the venue (the owner's restaurant)
-  const slug = slugify(venueName);
+  // ── Email confirmation required ────────────────────────────
+  // Supabase returns session=null when the user must confirm their
+  // email first. Venue creation happens in /auth/callback after
+  // the confirmation link is clicked.
+  if (!data.session) {
+    return { session: null, error: null, needsEmailConfirmation: true };
+  }
+
+  // ── Email confirmation disabled ────────────────────────────
+  // Session is immediately available — create the venue now.
+  const userId = data.user.id;
+  const slug   = slugify(venueName);
+
   const { data: venue, error: venueError } = await supabase
     .from("venues")
     .insert({ name: venueName, slug, owner_id: userId })
@@ -78,20 +109,11 @@ export async function serverSignUp(
     .single();
 
   if (venueError || !venue) {
-    // Roll back the auth user if venue creation fails
-    // (In production: use a DB trigger to create the venue instead)
     return {
       session: null,
       error: venueError?.message ?? "Failed to create venue",
     };
   }
-
-  // 3. Assign owner role in staff_roles
-  await supabase.from("staff_roles").insert({
-    user_id:  userId,
-    venue_id: venue.id,
-    role:     "owner",
-  });
 
   return {
     session: {
@@ -163,14 +185,10 @@ export async function getServerSession(): Promise<AuthSession | null> {
 
 // ── Internal: resolve venue + role from user id ───────────────
 //
-// Strategy (matches the DB schema where owners live in venues.owner_id
-// and staff live in staff_roles):
-//
-// 1. Check venues.owner_id first — if this user owns a venue,
-//    they are always an owner regardless of staff_roles.
-// 2. If not an owner, check staff_roles for a staff assignment.
-// 3. If found as owner but missing from staff_roles, backfill
-//    staff_roles automatically so future queries are faster.
+// Uses the admin (service-role) client for DB queries so RLS
+// never blocks a legitimate authenticated user from reading
+// their own venue. Auth is already verified by the caller via
+// supabase.auth.getUser() before this function is called.
 //
 async function resolveSession(
   userId:   string,
@@ -181,8 +199,11 @@ async function resolveSession(
   const name =
     (authUser.user?.user_metadata?.full_name as string | undefined) ?? email;
 
+  // Use admin client so RLS never blocks a legitimate session lookup.
+  const admin = createSupabaseAdminClient();
+
   // ── Step 1: Check if user owns a venue ───────────────────────
-  const { data: ownedVenue } = await supabase
+  const { data: ownedVenue } = await admin
     .from("venues")
     .select("id, name, slug")
     .eq("owner_id", userId)
@@ -190,10 +211,8 @@ async function resolveSession(
     .maybeSingle();
 
   if (ownedVenue) {
-    // User is an owner — backfill staff_roles if the row is missing.
-    // This fixes the "No venue metadata" error for owners who signed up
-    // before the staff_roles insert was added to the signup flow.
-    await supabase
+    // Backfill staff_roles if missing
+    await admin
       .from("staff_roles")
       .upsert(
         { user_id: userId, venue_id: ownedVenue.id, role: "owner" },
@@ -216,7 +235,7 @@ async function resolveSession(
   }
 
   // ── Step 2: Check staff_roles for non-owner staff ─────────────
-  const { data: roleRow, error: roleError } = await supabase
+  const { data: roleRow, error: roleError } = await admin
     .from("staff_roles")
     .select("role, venue_id, venues(id, name, slug)")
     .eq("user_id", userId)

@@ -130,15 +130,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // ── 4. Check slug uniqueness ─────────────────────────────────
   // Slugs must be globally unique (they form the public QR URL).
-  // If a collision exists, append the user_id prefix to disambiguate.
+  // If a collision exists, check if it belongs to this user first
+  // (can happen when auth/callback already created the venue but
+  // getServerSession still returned venueId="" on first load).
   let finalSlug = venueSlug;
   const { data: slugCollision } = await sessionClient
     .from("venues")
-    .select("id")
+    .select("id, owner_id")
     .eq("slug", venueSlug)
     .maybeSingle();
 
   if (slugCollision) {
+    if ((slugCollision as { owner_id?: string }).owner_id === user_id) {
+      // This slug already belongs to this user — treat as success
+      const admin = await createSupabaseAdminClient();
+      await admin.from("staff_roles").upsert(
+        { user_id, venue_id: slugCollision.id, role: "owner" },
+        { onConflict: "user_id,venue_id", ignoreDuplicates: true },
+      );
+      return ok({
+        venue_id:   slugCollision.id,
+        venue_name: cleanVenueName,
+        venue_slug: venueSlug,
+        role:       "owner",
+        created:    false,
+      }, 200);
+    }
+    // Belongs to someone else — append user_id prefix to disambiguate
     // e.g. "burger-house" → "burger-house-a1b2"
     finalSlug = `${venueSlug}-${user_id.slice(0, 4)}`;
   }

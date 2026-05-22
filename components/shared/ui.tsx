@@ -61,7 +61,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer select-none",
+        "inline-flex items-center justify-center gap-1.5 transition-[transform,opacity,background-color,border-color,box-shadow] duration-150 cursor-pointer select-none",
         varMap[variant],
         sizeMap[size],
         className
@@ -87,7 +87,7 @@ export function Card({ children, className, hover, onClick }: CardProps) {
       className={cn(
         "bg-[var(--b1)] border border-[var(--bd)] rounded-[var(--r)] overflow-hidden",
         hover &&
-          "transition-all duration-200 hover:border-[var(--bda)] hover:-translate-y-0.5 hover:shadow-[var(--sh)] cursor-pointer",
+          "transition-[transform,box-shadow,border-color] duration-200 hover:border-[var(--bda)] hover:-translate-y-0.5 hover:shadow-[var(--sh)] cursor-pointer",
         className
       )}
     >
@@ -219,7 +219,7 @@ export function Modal({ open, onClose, title, children, footer, maxWidth = "440p
           <button
             onClick={onClose}
             className="w-7 h-7 rounded-lg bg-[var(--b2)] border border-[var(--bd)] flex items-center justify-center text-sm
-                       hover:bg-[var(--dg)] hover:text-white hover:border-[var(--dg)] transition-all duration-150"
+                       hover:bg-[var(--dg)] hover:text-white hover:border-[var(--dg)] transition-[background-color,border-color,color] duration-150"
           >
             ✕
           </button>

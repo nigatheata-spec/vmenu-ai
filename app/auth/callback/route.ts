@@ -11,7 +11,8 @@
 // =============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
+import { slugify } from "@/lib/utils";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
@@ -86,16 +87,48 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const user = data.user;
   const meta = user.user_metadata as Record<string, string | undefined>;
   const venueName = meta.venue_name;
-  const venueSlug = meta.venue_slug;
+  const venueSlug = meta.venue_slug ?? (venueName ? slugify(venueName) : undefined);
 
   if (venueName && venueSlug) {
-    const { error: fnError } = await supabase.rpc("create_venue_for_owner", {
-      p_name:     venueName,
-      p_slug:     venueSlug,
-      p_owner_id: user.id,
-    });
-    if (fnError) {
-      console.error("[auth/callback] create_venue_for_owner failed:", fnError.message);
+    // Use the admin client (service role) to bypass RLS.
+    // The RPC create_venue_for_owner uses auth.uid() internally,
+    // but auth.uid() can return null in server route handlers when
+    // the JWT hasn't propagated to PostgREST yet after exchangeCodeForSession.
+    // Direct admin insert is reliable and safe here because we already
+    // verified the user identity via exchangeCodeForSession above.
+    const admin = createSupabaseAdminClient();
+
+    // Idempotency: skip if venue already exists for this owner
+    const { data: existing } = await admin
+      .from("venues")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (!existing) {
+      // Handle slug collision by appending user id prefix
+      let finalSlug = venueSlug;
+      const { data: collision } = await admin
+        .from("venues")
+        .select("id")
+        .eq("slug", venueSlug)
+        .maybeSingle();
+      if (collision) finalSlug = `${venueSlug}-${user.id.slice(0, 4)}`;
+
+      const { data: newVenue, error: venueError } = await admin
+        .from("venues")
+        .insert({ name: venueName, slug: finalSlug, owner_id: user.id })
+        .select("id")
+        .single();
+
+      if (venueError) {
+        console.error("[auth/callback] venue insert failed:", venueError.message);
+      } else if (newVenue) {
+        await admin.from("staff_roles").upsert(
+          { user_id: user.id, venue_id: newVenue.id, role: "owner" },
+          { onConflict: "user_id,venue_id", ignoreDuplicates: true },
+        );
+      }
     }
   }
 

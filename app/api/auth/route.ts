@@ -15,6 +15,7 @@ import {
   serverSignIn,
   serverSignUp,
   serverSignOut,
+  type SignUpResult,
 } from "@/lib/supabase/actions";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -45,21 +46,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // ── Sign up ────────────────────────────────────────────────
   if (action === "signup") {
-    const { email, password, fullName, venueName } = body;
+    const { email, password, fullName, venueName, city, phone, redirectTo } = body;
     if (!email || !password || !fullName || !venueName) {
       return NextResponse.json(
         { error: "email, password, fullName and venueName are required" },
         { status: 422 },
       );
     }
-    const result = await serverSignUp(
+    const result: SignUpResult = await serverSignUp(
       String(email),
       String(password),
       String(fullName),
       String(venueName),
+      {
+        city:       city       ? String(city)       : undefined,
+        phone:      phone      ? String(phone)      : undefined,
+        redirectTo: redirectTo ? String(redirectTo) : undefined,
+      },
     );
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    // Email confirmation required — no session yet but signup succeeded
+    if (result.needsEmailConfirmation) {
+      return NextResponse.json({ needsEmailConfirmation: true }, { status: 200 });
     }
     return NextResponse.json({ session: result.session }, { status: 201 });
   }

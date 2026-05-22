@@ -22,7 +22,7 @@
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase }         from "@/lib/supabase/client";
+import { supabase }         from "@/lib/supabase/client"; // used only for resend
 import { AuthField }        from "@/components/auth/AuthField";
 import { AuthSubmitButton } from "@/components/auth/AuthSubmitButton";
 import { AuthAlert }        from "@/components/auth/AuthAlert";
@@ -123,6 +123,10 @@ export function LoginForm() {
   };
 
   // ── Real login ─────────────────────────────────────────────
+  // We call /api/auth (same-origin) instead of Supabase directly
+  // to avoid the Safari "Load failed" CORS error that occurs when
+  // the Supabase project's redirect URL allowlist doesn't include
+  // the current origin (e.g. a Vercel preview URL).
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError(null);
@@ -137,18 +141,24 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const res  = await fetch("/api/auth", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action: "signin", email, password }),
+      });
+      const json = await res.json() as { error?: string; session?: unknown };
 
-      if (error) {
+      if (!res.ok) {
+        const msg = json.error ?? "Authentication failed";
         // Special handling for unconfirmed email — show resend button
         if (
-          error.message.toLowerCase().includes("email not confirmed") ||
-          error.message.toLowerCase().includes("email_not_confirmed")
+          msg.toLowerCase().includes("email not confirmed") ||
+          msg.toLowerCase().includes("email_not_confirmed")
         ) {
           setEmailNotConfirmed(true);
           return;
         }
-        setApiError(mapError(error.message));
+        setApiError(mapError(msg));
         return;
       }
 

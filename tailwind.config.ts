@@ -60,7 +60,7 @@ const config: Config = {
       },
       animation: {
         fadeIn:  "fadeIn .2s ease both",
-        fadeUp:  "fadeUp .7s cubic-bezier(.16,1,.3,1) both",
+        fadeUp:  "fadeUp .4s cubic-bezier(.16,1,.3,1) both",
         scaleIn: "scaleIn .35s cubic-bezier(.34,1.56,.64,1) both",
         barGrow: "barGrow .8s cubic-bezier(.16,1,.3,1) both",
         toastIn: "toastIn .3s cubic-bezier(.16,1,.3,1) both",

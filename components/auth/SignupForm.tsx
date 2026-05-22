@@ -23,7 +23,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { supabase }         from "@/lib/supabase/client";
 import { AuthField }        from "@/components/auth/AuthField";
 import { AuthSubmitButton } from "@/components/auth/AuthSubmitButton";
 import { AuthAlert }        from "@/components/auth/AuthAlert";
@@ -254,36 +253,50 @@ export function SignupForm() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email:    step1.email,
-        password: step1.password,
-        options: {
-          data: {
-            full_name:   step1.fullName,
-            // Store venue info in metadata — inserted after email confirm
-            venue_name:  step2.venueName,
-            venue_slug:  slugify(step2.venueName),
-            venue_city:  step2.city,
-            venue_phone: step2.phone,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      // ── Call the server-side /api/auth endpoint ──────────────
+      // We intentionally avoid calling Supabase directly from the
+      // browser because client→Supabase cross-origin requests fail
+      // on Safari ("Load failed") when the Supabase project's
+      // redirect URL allowlist doesn't include the current origin.
+      // The server proxy is same-origin → no CORS involved.
+      const res = await fetch("/api/auth", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action:     "signup",
+          email:      step1.email,
+          password:   step1.password,
+          fullName:   step1.fullName,
+          venueName:  step2.venueName,
+          city:       step2.city,
+          phone:      step2.phone,
+          // Pass the callback URL so the email confirmation link
+          // points to the right host (localhost vs production).
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }),
       });
 
-      if (error) {
-        // Check for rate limit FIRST — show countdown, hide other errors
-        const secs = parseRateLimitSeconds(error.message);
-        if (secs > 0) {
-          setRateLimitSecs(secs);
-          return; // Don't show any other error — the banner is enough
-        }
+      const json = await res.json() as {
+        error?:                  string;
+        session?:                unknown;
+        needsEmailConfirmation?: boolean;
+      };
 
-        // Other errors
+      if (!res.ok) {
+        const msg = json.error ?? "Registration failed";
+
+        // Rate limit check
+        const secs = parseRateLimitSeconds(msg);
+        if (secs > 0) { setRateLimitSecs(secs); return; }
+
+        // Friendly Arabic translations for common errors
         const msgMap: Record<string, string> = {
           "User already registered":
             "هذا البريد مسجل مسبقاً — يمكنك تسجيل الدخول",
           "user_already_exists":
             "هذا البريد مسجل مسبقاً — يمكنك تسجيل الدخول",
+          "Email address is invalid":
+            "صيغة البريد الإلكتروني غير صحيحة",
           "Signup requires a valid password":
             "كلمة المرور غير صالحة، يجب أن تكون 8 أحرف على الأقل",
           "Password should be at least 6 characters":
@@ -291,39 +304,19 @@ export function SignupForm() {
           "Unable to validate email address: invalid format":
             "صيغة البريد الإلكتروني غير صحيحة",
         };
-        setApiError(msgMap[error.message] ?? error.message);
-        return;
-      }
-
-      // If email confirmation disabled → session exists immediately
-      if (data.session && data.user) {
-        // Insert venue now with real session
-        const { data: venueRow } = await supabase
-          .from("venues")
-          .insert({
-            name:     step2.venueName,
-            slug:     slugify(step2.venueName),
-            owner_id: data.user.id,
-          })
-          .select("id")
-          .single();
-
-        if (venueRow) {
-          await supabase.from("staff_roles").insert({
-            user_id:  data.user.id,
-            venue_id: venueRow.id,
-            role:     "owner",
-          });
-        }
-
-        router.push("/dashboard");
-        router.refresh();
+        setApiError(msgMap[msg] ?? msg);
         return;
       }
 
       // Email confirmation required — show success screen
-      // Venue insert happens in /auth/callback after confirmation
-      setDone(true);
+      if (json.needsEmailConfirmation) {
+        setDone(true);
+        return;
+      }
+
+      // Email confirmation disabled — session already set by server
+      router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       console.error("[SignupForm]", err);
       setApiError("خطأ في الاتصال بالخادم، يرجى المحاولة مجدداً");
