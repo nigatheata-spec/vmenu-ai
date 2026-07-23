@@ -75,10 +75,22 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 4. Validate real Supabase session
+  // 4. Validate real Supabase session (3s timeout — if Supabase is down,
+  //    fail safe: treat as unauthenticated rather than hanging the whole site)
   const supabase = createSupabaseMiddlewareClient(request, response);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  const isAuthenticated = !error && !!user;
+  let isAuthenticated = false;
+  try {
+    const result = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 3000)
+      ),
+    ]);
+    isAuthenticated = !result.error && !!result.data.user;
+  } catch {
+    // Supabase unreachable or timed out — let protected routes redirect to login
+    isAuthenticated = false;
+  }
 
   // Unauthenticated → block /dashboard
   if (isProtected && !isAuthenticated) {
