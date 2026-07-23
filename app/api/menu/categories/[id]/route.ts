@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { CategoryDTO }                        from "@/types/api";
 
@@ -37,7 +37,7 @@ export async function GET(
   if (!ctx)               return unauthorized();
   if (!ctx.can("menu:read")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data: row, error } = await supabase
     .from("categories").select(COLS)
     .eq("id", id).eq("venue_id", ctx.venueId).maybeSingle();
@@ -73,7 +73,7 @@ export async function PUT(
   if (input.sort_order !== undefined) updates.sort_order = Number(input.sort_order);
 
   // Verify exists via session client first
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data: existing } = await supabase
     .from("categories").select("id")
     .eq("id", id).eq("venue_id", ctx.venueId).maybeSingle();
@@ -104,7 +104,7 @@ export async function DELETE(
   if (!ctx)                return unauthorized();
   if (!ctx.can("menu:write")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Guard: refuse to delete a non-empty category (read via session client is fine)
   const { count } = await supabase

@@ -18,7 +18,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { isTrial, TRIAL_ORDERS }                  from "@/lib/trial-data";
 
@@ -103,7 +103,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const limit       = Math.min(parseInt(searchParams.get("limit")  ?? "50",  10) || 50,  200);
   const offset      =          parseInt(searchParams.get("offset") ?? "0",   10) || 0;
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   let query = supabase
     .from("orders")
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const admin    = createSupabaseAdminClient();
 
   // Fetch prices from DB — never use client-supplied prices

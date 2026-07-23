@@ -35,7 +35,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   if (!ctx)             return unauthorized();
   if (!ctx.can("staff:read")) return forbidden("Only owners and managers can view staff");
 
-  const admin = await createSupabaseAdminClient();
+  const admin = createSupabaseAdminClient();
 
   // Fetch all staff_roles for this venue
   const { data: roles, error } = await admin
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "password must be at least 8 characters", code: "WEAK_PASSWORD" }, { status: 422 });
   }
 
-  const admin = await createSupabaseAdminClient();
+  const admin = createSupabaseAdminClient();
 
   // 1. Create the auth user
   const { data: authData, error: authError } = await admin.auth.admin.createUser({

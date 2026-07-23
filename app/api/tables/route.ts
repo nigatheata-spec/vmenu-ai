@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { buildTableMenuUrl,
          generateQRDataUrl,
@@ -62,7 +62,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   // Allow any role that can read tables OR place orders (needs table list for order form)
   if (!ctx.can("tables:read") && !ctx.can("orders:insert")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const { data: rows, error } = await supabase
     .from("tables")
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const admin    = createSupabaseAdminClient();
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Check uniqueness within this venue
   const { data: existing } = await supabase

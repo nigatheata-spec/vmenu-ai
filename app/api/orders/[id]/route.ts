@@ -17,7 +17,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
 
 const NO_CACHE = { "Cache-Control": "no-store" };
@@ -83,7 +83,7 @@ export async function GET(
   if (!ctx)                  return unauthorized();
   if (!ctx.can("orders:read")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const { data: row, error } = await supabase
     .from("orders")
@@ -183,7 +183,7 @@ export async function PATCH(
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Fetch current order
   const { data: order, error: fetchErr } = await supabase
@@ -257,7 +257,7 @@ export async function DELETE(
   if (!ctx)                   return unauthorized();
   if (!ctx.can("orders:delete")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const { data: order } = await supabase
     .from("orders")

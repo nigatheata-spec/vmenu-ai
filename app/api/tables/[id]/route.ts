@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { buildTableMenuUrl }                       from "@/lib/qr";
 
@@ -30,7 +30,7 @@ export async function GET(
   if (!ctx)                  return unauthorized();
   if (!ctx.can("tables:read")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const [tableRes, venueRes] = await Promise.all([
     supabase
@@ -94,7 +94,7 @@ export async function PUT(
     return fail("EMPTY_UPDATE", "No fields to update", 422);
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Verify ownership
   const { data: existing } = await supabase
@@ -133,7 +133,7 @@ export async function DELETE(
   if (!ctx)                   return unauthorized();
   if (!ctx.can("tables:manage")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Block deletion if there are active orders on this table
   const { count: activeOrders } = await supabase

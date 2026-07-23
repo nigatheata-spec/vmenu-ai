@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient }              from "@/lib/supabase/server";
+import { createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { isTrial, trialDashboard }                from "@/lib/trial-data";
 
 interface TopItem    { menu_item_id:string; name_ar:string; name_en:string; emoji:string; qty_sold:number; revenue:number; }
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const dayEnd     = `${targetDate}T23:59:59.999Z`;
   const topLimit   = Math.min(parseInt(searchParams.get("limit") ?? "10", 10) || 10, 50);
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const venueId  = ctx.venueId;
 
   try {

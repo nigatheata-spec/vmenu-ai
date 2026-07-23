@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { CategoryDTO } from "@/types/api";
 import { isTrial, TRIAL_CATEGORIES } from "@/lib/trial-data";
 
@@ -36,7 +36,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   if (!ctx.can("menu:read")) return forbidden("menu:read permission required");
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabaseAdminClient();
 
     const { data: rows, error } = await supabase
       .from("categories")

@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse }                from "next/server";
 import { getUserContext, unauthorized, forbidden }  from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { MenuItemDTO }                         from "@/types/api";
 import { isTrial, TRIAL_ITEMS }                    from "@/lib/trial-data";
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const availableParam = searchParams.get("available");
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabaseAdminClient();
 
     let query = supabase
       .from("menu_items")

@@ -21,7 +21,7 @@
 
 import { NextRequest, NextResponse }                from "next/server";
 import { getUserContext, unauthorized, forbidden }  from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { MenuItemDTO }                         from "@/types/api";
 
@@ -67,7 +67,7 @@ export async function GET(
   if (!ctx)                return unauthorized();
   if (!ctx.can("menu:read")) return forbidden();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data: row, error } = await supabase
     .from("menu_items")
     .select(ITEM_COLUMNS)
@@ -107,7 +107,7 @@ export async function PUT(
   }
 
   // Verify the item belongs to this venue first (read is ok via session client)
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data: existing } = await supabase
     .from("menu_items")
     .select("id")
@@ -171,7 +171,7 @@ export async function DELETE(
   if (!ctx.can("menu:write")) return forbidden();
 
   // Verify ownership via session client
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data: existing } = await supabase
     .from("menu_items")
     .select("id")

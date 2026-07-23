@@ -23,7 +23,7 @@ export async function DELETE(req: NextRequest, { params }: Params): Promise<Next
   if (!ctx)              return unauthorized();
   if (!ctx.can("staff:write")) return forbidden();
 
-  const admin = await createSupabaseAdminClient();
+  const admin = createSupabaseAdminClient();
 
   // Verify the staff_roles row belongs to this venue
   const { data: row, error: findError } = await admin
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest, { params }: Params): Promise<NextR
     return forbidden("Only owners can assign the manager role");
   }
 
-  const admin = await createSupabaseAdminClient();
+  const admin = createSupabaseAdminClient();
 
   const { data: row } = await admin
     .from("staff_roles")

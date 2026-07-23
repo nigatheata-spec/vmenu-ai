@@ -15,7 +15,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 type OrderStatus = "new" | "prep" | "ready" | "served";
 type Params = { params: Promise<{ id: string }> };
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Params): Promise<NextR
     return NextResponse.json({ error: `status must be one of: ${VALID.join(", ")}`, code: "INVALID_STATUS" }, { status: 422 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Fetch the order — RLS scopes this to the user's venue automatically
   const { data: order, error: fetchError } = await supabase

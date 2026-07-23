@@ -19,7 +19,7 @@
 import { NextRequest, NextResponse }               from "next/server";
 import { cookies }                                 from "next/headers";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseServerClient,
+import { createSupabaseAdminClient,
          createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { buildTableMenuUrl,
          generateQRDataUrl,
@@ -56,7 +56,7 @@ export async function POST(
 
   const format = new URL(req.url).searchParams.get("format"); // "svg" | null
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   // Verify table belongs to this venue
   const { data: table } = await supabase
