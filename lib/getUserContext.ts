@@ -13,7 +13,7 @@
 //   // ... use ctx.venueId, ctx.role, ctx.userId
 // =============================================================
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import { hasPermission, hasAnyPermission, hasAllPermissions } from "@/lib/rbac";
 import type { Permission } from "@/lib/rbac";
 export type { Permission };
@@ -88,11 +88,13 @@ export async function getUserContext(): Promise<UserContext | null> {
   //    a) Query staff_roles for this user — get role + venue_id
   //    b) If not in staff_roles, check venues.owner_id as fallback
   //       (for owners who haven't been backfilled to staff_roles yet)
-  const { data: roleRow } = await supabase
+  const admin = createSupabaseAdminClient();
+
+  const { data: roleRow } = await admin
     .from("staff_roles")
     .select("role, venue_id")
     .eq("user_id", user.id)
-    .order("role")           // "owner" sorts last alphabetically — picks staff role first
+    .order("role")
     .limit(1)
     .maybeSingle();
 
@@ -101,7 +103,7 @@ export async function getUserContext(): Promise<UserContext | null> {
   }
 
   // Fallback: check venues.owner_id (owner with missing staff_roles row)
-  const { data: venueRow } = await supabase
+  const { data: venueRow } = await admin
     .from("venues")
     .select("id")
     .eq("owner_id", user.id)
