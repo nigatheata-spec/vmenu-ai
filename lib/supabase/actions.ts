@@ -243,6 +243,52 @@ async function resolveSession(
     .maybeSingle();
 
   if (roleError || !roleRow) {
+    // ── Step 3: Auto-recreate venue from signup metadata ──────────
+    // If the venue is missing (e.g. after a DB restore), recreate it
+    // automatically using the metadata stored during signUp so the
+    // user is never permanently locked out.
+    const { data: authUser2 } = await supabase.auth.getUser();
+    const meta = authUser2.user?.user_metadata as Record<string, string | undefined> | undefined;
+    const venueName = meta?.venue_name ?? name + "'s Restaurant";
+    const venueSlug = meta?.venue_slug ?? slugify(venueName);
+
+    // Handle slug collision
+    let finalSlug = venueSlug;
+    const { data: collision } = await admin
+      .from("venues")
+      .select("id")
+      .eq("slug", venueSlug)
+      .maybeSingle();
+    if (collision) finalSlug = `${venueSlug}-${userId.slice(0, 4)}`;
+
+    const { data: newVenue } = await admin
+      .from("venues")
+      .insert({ name: venueName, slug: finalSlug, owner_id: userId })
+      .select("id, name, slug")
+      .single();
+
+    if (newVenue) {
+      await admin
+        .from("staff_roles")
+        .upsert(
+          { user_id: userId, venue_id: newVenue.id, role: "owner" },
+          { onConflict: "user_id,venue_id", ignoreDuplicates: true }
+        );
+      return {
+        session: {
+          userId,
+          email,
+          name,
+          venueId:   newVenue.id,
+          venueName: newVenue.name,
+          venueSlug: newVenue.slug,
+          role:      "owner" as StaffRole,
+          initial:   name.charAt(0).toUpperCase(),
+        },
+        error: null,
+      };
+    }
+
     return {
       session: null,
       error: "No venue found for this account. Please contact support.",
