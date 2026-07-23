@@ -81,9 +81,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             status
           ),
           menu_items (
-            name_ar,
-            name_en,
-            emoji
+            name,
+            name_en
           )
         `)
         .eq("orders.venue_id", venueId)
@@ -153,7 +152,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     for (const row of todayItemRows) {
       const order    = row.orders     as unknown as { created_at: string } | null;
-      const menuItem = row.menu_items as unknown as { name_ar:string; name_en:string; emoji:string } | null;
+      const menuItem = row.menu_items as unknown as { name:string; name_en:string } | null;
       if (!order) continue;
 
       const qty     = Number(row.quantity   ?? 0);
@@ -167,9 +166,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       if (!itemAgg[itemId]) {
         itemAgg[itemId] = {
           menu_item_id:  itemId,
-          name_ar:  menuItem?.name_ar ?? "",
+          name_ar:  menuItem?.name    ?? "",
           name_en:  menuItem?.name_en ?? "",
-          emoji:    menuItem?.emoji   ?? "",
+          emoji:    "",
           qty_sold: 0,
           revenue:  0,
         };

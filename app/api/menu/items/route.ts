@@ -6,21 +6,19 @@
 
 import { NextRequest, NextResponse }                from "next/server";
 import { getUserContext, unauthorized, forbidden }  from "@/lib/getUserContext";
-import { createSupabaseAdminClient,
-         createSupabaseAdminClient }                from "@/lib/supabase/server";
+import { createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { MenuItemDTO }                         from "@/types/api";
 import { isTrial, TRIAL_ITEMS }                    from "@/lib/trial-data";
 
 const NO_CACHE  = { "Cache-Control": "no-store" };
 const CACHE_30S = { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" };
 
-// All columns — badge and emoji are real DB columns
+// Columns that actually exist in the DB after restore
 const ITEM_COLS = `
   id, venue_id, category_id,
-  name_ar, name_en,
-  description_ar, description_en,
+  name, name_en,
+  description,
   price, image_url, is_available,
-  badge, emoji,
   created_at
 `;
 
@@ -38,15 +36,14 @@ function rowToDTO(row: Record<string, unknown>): MenuItemDTO {
   return {
     id:             String(row.id),
     category_id:    String(row.category_id  ?? ""),
-    name_ar:        String(row.name_ar       ?? ""),
+    name_ar:        String(row.name          ?? ""),  // DB col: name
     name_en:        String(row.name_en       ?? ""),
-    description_ar: row.description_ar ? String(row.description_ar) : undefined,
-    description_en: row.description_en ? String(row.description_en) : undefined,
+    description_ar: row.description ? String(row.description) : undefined,
     price:          Number(row.price         ?? 0),
     image_url:      String(row.image_url     ?? ""),
     available:      Boolean(row.is_available ?? true),
-    badge:          String(row.badge         ?? ""),  // real DB column
-    emoji:          String(row.emoji         ?? ""),  // real DB column
+    badge:          "",
+    emoji:          "",
   };
 }
 
@@ -144,17 +141,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const { data: row, error } = await admin
       .from("menu_items")
       .insert({
-        venue_id:       ctx.venueId,                          // scoped to user's venue
-        category_id:    String(input.category_id),
-        name_ar:        String(input.name_ar),
-        name_en:        String(input.name_en),
-        description_ar: input.description_ar ? String(input.description_ar) : null,
-        description_en: input.description_en ? String(input.description_en) : null,
+        venue_id:     ctx.venueId,
+        category_id:  String(input.category_id),
+        name:         String(input.name_ar),          // DB col: name = Arabic name
+        name_en:      String(input.name_en),
+        description:  input.description_ar ? String(input.description_ar) : null,
         price,
-        image_url:      input.image_url ? String(input.image_url) : null,
-        is_available:   input.available !== undefined ? Boolean(input.available) : true,
-        badge:          input.badge ? String(input.badge) : null,  // persist badge
-        emoji:          input.emoji ? String(input.emoji) : null,  // persist emoji
+        image_url:    input.image_url ? String(input.image_url) : null,
+        is_available: input.available !== undefined ? Boolean(input.available) : true,
       })
       .select(ITEM_COLS)
       .single();

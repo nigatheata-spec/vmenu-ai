@@ -18,8 +18,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseAdminClient,
-         createSupabaseAdminClient }               from "@/lib/supabase/server";
+import { createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { isTrial, TRIAL_ORDERS }                  from "@/lib/trial-data";
 
 const NO_CACHE = { "Cache-Control": "no-store" };
@@ -111,7 +110,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       id,
       table_id,
       status,
-      total_price,
+      total,
       notes,
       created_at,
       updated_at,
@@ -119,9 +118,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       order_items (
         id,
         menu_item_id,
+        name,
         quantity,
         price,
-        menu_items!menu_item_id ( name_ar, name_en, emoji )
+        menu_items!menu_item_id ( name, name_en )
       )
     `)
     .eq("venue_id", ctx.venueId)
@@ -161,17 +161,18 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const rawItems  = row.order_items as unknown as {
       id: string;
       menu_item_id: string;
+      name: string | null;
       quantity: number;
       price: number;
-      menu_items: { name_ar: string; name_en: string; emoji: string } | null;
+      menu_items: { name: string; name_en: string } | null;
     }[] ?? [];
 
     const items: OrderItemDTO[] = rawItems.map((oi) => ({
       id:         oi.id,
       menu_item_id:    String(oi.menu_item_id),
-      name_ar:    oi.menu_items?.name_ar ?? "",
+      name_ar:    oi.menu_items?.name ?? oi.name ?? "",
       name_en:    oi.menu_items?.name_en ?? "",
-      emoji:      oi.menu_items?.emoji   ?? "",
+      emoji:      "",
       quantity:   Number(oi.quantity),
       price: Number(oi.price),
       subtotal:   Number(oi.quantity) * Number(oi.price),
@@ -183,7 +184,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       table_number: tableData?.table_number ?? null,
       status:       toAPIStatus(row.status as string),
       status_raw:   row.status as DBStatus,
-      total_price:        Number(row.total_price),
+      total_price:        Number((row as any).total),
       notes:        row.notes ? String(row.notes) : null,
       items,
       created_at:   String(row.created_at),
@@ -260,7 +261,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { data: menuItems, error: itemsError } = await supabase
     .from("menu_items")
-    .select("id, name_ar, name_en, emoji, price, is_available")
+    .select("id, name, name_en, price, is_available")
     .eq("venue_id", ctx.venueId)
     .in("id", itemIds);
 
@@ -320,11 +321,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .insert({
       venue_id: ctx.venueId,
       table_id: input.table_id ? String(input.table_id) : null,
-      status:   "new",              // always starts as "received"
-      total_price:    Math.round(orderTotal * 100) / 100,
+      status:   "new",
+      total:    Math.round(orderTotal * 100) / 100,
       notes:    input.notes ? String(input.notes) : null,
     })
-    .select("id, table_id, status, total_price, notes, created_at")
+    .select("id, table_id, status, total, notes, created_at")
     .single();
 
   if (orderError || !newOrder) {
@@ -353,9 +354,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return {
       id:         String(oi.id),
       menu_item_id:    String(oi.menu_item_id),
-      name_ar:    menuItem?.name_ar ?? "",
+      name_ar:    (menuItem as any)?.name ?? "",
       name_en:    menuItem?.name_en ?? "",
-      emoji:      menuItem?.emoji   ?? "",
+      emoji:      "",
       quantity:   Number(oi.quantity),
       price: Number(oi.price),
       subtotal:   Number(oi.quantity) * Number(oi.price),
@@ -365,10 +366,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const response: OrderDTO = {
     id:           String(newOrder.id),
     table_id:     newOrder.table_id ? String(newOrder.table_id) : null,
-    table_number: null, // not fetched at creation time
+    table_number: null,
     status:       "received",
     status_raw:   "new",
-    total_price:        Number(newOrder.total_price),
+    total_price:        Number((newOrder as any).total),
     notes:        newOrder.notes ?? null,
     items:        responseItems,
     created_at:   String(newOrder.created_at),

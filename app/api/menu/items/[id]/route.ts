@@ -21,29 +21,27 @@
 
 import { NextRequest, NextResponse }                from "next/server";
 import { getUserContext, unauthorized, forbidden }  from "@/lib/getUserContext";
-import { createSupabaseAdminClient,
-         createSupabaseAdminClient }                from "@/lib/supabase/server";
+import { createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { MenuItemDTO }                         from "@/types/api";
 
 const NO_CACHE  = { "Cache-Control": "no-store" };
 const CACHE_30S = { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" };
 
 const ITEM_COLUMNS =
-  "id, venue_id, category_id, name_ar, name_en, description_ar, description_en, price, image_url, is_available, badge, emoji";
+  "id, venue_id, category_id, name, name_en, description, price, image_url, is_available";
 
 function rowToDTO(row: Record<string, unknown>): MenuItemDTO {
   return {
     id:             String(row.id),
     category_id:    String(row.category_id  ?? ""),
-    name_ar:        String(row.name_ar       ?? ""),
+    name_ar:        String(row.name          ?? ""),  // DB col: name
     name_en:        String(row.name_en       ?? ""),
-    description_ar: row.description_ar ? String(row.description_ar) : undefined,
-    description_en: row.description_en ? String(row.description_en) : undefined,
+    description_ar: row.description ? String(row.description) : undefined,
     price:          Number(row.price         ?? 0),
     image_url:      String(row.image_url     ?? ""),
     available:      Boolean(row.is_available ?? true),
-    badge:          String(row.badge         ?? ""),
-    emoji:          String(row.emoji         ?? ""),
+    badge:          "",
+    emoji:          "",
   };
 }
 
@@ -121,16 +119,13 @@ export async function PUT(
 
   // Build partial update — only fields that were sent
   const updates: Record<string, unknown> = {};
-  if (input.name_ar        !== undefined) updates.name_ar        = input.name_ar;
-  if (input.name_en        !== undefined) updates.name_en        = input.name_en;
-  if (input.description_ar !== undefined) updates.description_ar = input.description_ar;
-  if (input.description_en !== undefined) updates.description_en = input.description_en;
-  if (input.price          !== undefined) updates.price          = Number(input.price);
-  if (input.category_id    !== undefined) updates.category_id    = input.category_id;
-  if (input.image_url      !== undefined) updates.image_url      = input.image_url || null;
-  if (input.available      !== undefined) updates.is_available   = Boolean(input.available);
-  if (input.badge          !== undefined) updates.badge          = input.badge || null;
-  if (input.emoji          !== undefined) updates.emoji          = input.emoji || null;
+  if (input.name_ar        !== undefined) updates.name         = input.name_ar;  // DB col: name
+  if (input.name_en        !== undefined) updates.name_en      = input.name_en;
+  if (input.description_ar !== undefined) updates.description  = input.description_ar;
+  if (input.price          !== undefined) updates.price        = Number(input.price);
+  if (input.category_id    !== undefined) updates.category_id  = input.category_id;
+  if (input.image_url      !== undefined) updates.image_url    = input.image_url || null;
+  if (input.available      !== undefined) updates.is_available = Boolean(input.available);
 
   if (Object.keys(updates).length === 0) {
     return ok(rowToDTO(existing as Record<string, unknown>), NO_CACHE);

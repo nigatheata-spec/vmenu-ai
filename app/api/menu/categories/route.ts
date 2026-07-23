@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseAdminClient, createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { CategoryDTO } from "@/types/api";
 import { isTrial, TRIAL_CATEGORIES } from "@/lib/trial-data";
 
@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
     const { data: rows, error } = await supabase
       .from("categories")
-      .select("id, venue_id, name_ar, name_en, sort_order, emoji, visible, created_at")
+      .select("id, venue_id, name, name_en, sort_order, created_at")
       .eq("venue_id", ctx.venueId)
       .order("sort_order", { ascending: true });
 
@@ -51,10 +51,10 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
     const categories: CategoryDTO[] = (rows ?? []).map((row) => ({
       id:         row.id,
-      name_ar:    row.name_ar ?? "",
+      name_ar:    (row as any).name ?? "",  // DB col: name = Arabic name
       name_en:    row.name_en ?? "",
-      emoji:      (row as any).emoji   ?? "",
-      visible:    (row as any).visible ?? true,
+      emoji:      "",
+      visible:    true,
       sort_order: row.sort_order ?? 99,
     }));
 
@@ -95,13 +95,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .from("categories")
       .insert({
         venue_id:   ctx.venueId,
-        name_ar:    String(input.name_ar),
+        name:       String(input.name_ar),  // DB col: name = Arabic name
         name_en:    String(input.name_en),
         sort_order: input.sort_order ? Number(input.sort_order) : 99,
-        emoji:      input.emoji   ? String(input.emoji)   : null,
-        visible:    input.visible !== undefined ? Boolean(input.visible) : true,
       })
-      .select("id, name_ar, name_en, sort_order, emoji, visible")
+      .select("id, name, name_en, sort_order")
       .single();
 
     if (error || !row) {
@@ -111,9 +109,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const newCategory: CategoryDTO = {
       id:         row.id,
-      name_ar:    row.name_ar ?? "",
+      name_ar:    (row as any).name ?? "",
       name_en:    row.name_en ?? "",
-      emoji:      (row as any).emoji ?? (input.emoji ? String(input.emoji) : ""),
+      emoji:      "",
       visible:    true,
       sort_order: row.sort_order ?? 99,
     };

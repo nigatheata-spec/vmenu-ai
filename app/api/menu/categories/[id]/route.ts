@@ -3,12 +3,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseAdminClient,
-         createSupabaseAdminClient }                from "@/lib/supabase/server";
+import { createSupabaseAdminClient }                from "@/lib/supabase/server";
 import type { CategoryDTO }                        from "@/types/api";
 
 const NO_CACHE = { "Cache-Control": "no-store" };
-const COLS     = "id, venue_id, name_ar, name_en, sort_order, emoji, visible";
+const COLS     = "id, venue_id, name, name_en, sort_order";
 
 function ok<T>(data: T, status = 200) {
   return NextResponse.json({ data, timestamp: new Date().toISOString(), next_cursor: null }, { status });
@@ -19,10 +18,10 @@ function fail(code: string, message: string, message_ar: string, status: number)
 function rowToDTO(row: Record<string, unknown>): CategoryDTO {
   return {
     id:         String(row.id),
-    name_ar:    String(row.name_ar  ?? ""),
+    name_ar:    String(row.name     ?? ""),  // DB col: name = Arabic name
     name_en:    String(row.name_en  ?? ""),
-    emoji:      String(row.emoji    ?? ""),
-    visible:    Boolean(row.visible ?? true),
+    emoji:      "",
+    visible:    true,
     sort_order: Number(row.sort_order ?? 99),
   };
 }
@@ -66,10 +65,8 @@ export async function PUT(
 
   const input  = body as Record<string, unknown>;
   const updates: Record<string, unknown> = {};
-  if (input.name_ar    !== undefined) updates.name_ar    = input.name_ar;
+  if (input.name_ar    !== undefined) updates.name       = input.name_ar;  // DB col: name
   if (input.name_en    !== undefined) updates.name_en    = input.name_en;
-  if (input.emoji      !== undefined) updates.emoji      = input.emoji;
-  if (input.visible    !== undefined) updates.visible    = Boolean(input.visible);
   if (input.sort_order !== undefined) updates.sort_order = Number(input.sort_order);
 
   // Verify exists via session client first
