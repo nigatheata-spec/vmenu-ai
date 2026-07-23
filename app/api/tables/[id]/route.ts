@@ -8,8 +8,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseAdminClient,
-         createSupabaseAdminClient }               from "@/lib/supabase/server";
+import { createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { buildTableMenuUrl }                       from "@/lib/qr";
 
 const NO_CACHE = { "Cache-Control": "no-store" };

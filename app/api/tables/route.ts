@@ -10,8 +10,7 @@
 
 import { NextRequest, NextResponse }               from "next/server";
 import { getUserContext, unauthorized, forbidden } from "@/lib/getUserContext";
-import { createSupabaseAdminClient,
-         createSupabaseAdminClient }               from "@/lib/supabase/server";
+import { createSupabaseAdminClient }               from "@/lib/supabase/server";
 import { buildTableMenuUrl,
          generateQRDataUrl,
          uploadQRToStorage }                       from "@/lib/qr";
